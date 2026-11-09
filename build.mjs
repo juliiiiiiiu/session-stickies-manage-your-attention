@@ -1,0 +1,12 @@
+import {readFile,writeFile} from 'node:fs/promises';
+const source=await readFile(new URL('./client-source.js',import.meta.url),'utf8');
+const image=await readFile(new URL('./westie-bulb.png',import.meta.url));
+if(!source.includes('__WESTIE_DATA_URI__'))throw new Error('Missing image insertion marker');
+const collapsedImage=await readFile(new URL('./westie-collapsed.png',import.meta.url));
+if(!source.includes('__WESTIE_COLLAPSED_DATA_URI__'))throw new Error('Missing collapsed image insertion marker');
+const rich=await readFile(new URL('./rich-editor.js',import.meta.url),'utf8');
+if(!source.includes('__RICH_EDITOR_SOURCE__'))throw new Error('Missing rich editor insertion marker');
+const board=await readFile(new URL('./board-ui.js',import.meta.url),'utf8');
+if(!source.includes('__STICKY_BOARD_SOURCE__'))throw new Error('Missing sticky board insertion marker');
+await writeFile(new URL('./client.js',import.meta.url),source.replace('__WESTIE_DATA_URI__','data:image/png;base64,'+image.toString('base64')).replace('__WESTIE_COLLAPSED_DATA_URI__','data:image/png;base64,'+collapsedImage.toString('base64')).replace('__RICH_EDITOR_SOURCE__',()=>rich).replace('__STICKY_BOARD_SOURCE__',()=>board));
+console.log('Built client.js with approved Westie asset');

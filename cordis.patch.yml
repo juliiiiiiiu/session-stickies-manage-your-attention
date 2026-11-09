@@ -1,0 +1,4 @@
+- insert:
+    - id: dsh-stickies
+      name: 'dsh-julies-session-stickies'
+      config: {}

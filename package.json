@@ -1,0 +1,14 @@
+{
+  "name": "dsh-julies-session-stickies",
+  "version": "1.0.0",
+  "description": "Julie's session stickies — session notes and explicitly authorized Agent follow-ups",
+  "private": true,
+  "peerDependencies": {"@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1"},
+  "type": "module",
+  "exports": {".": "./host.js", "./client": "./client.js", "./locale/*.json": "./locale/*.json", "./icon": "./westie-bulb.png"},
+  "files": ["host.js", "model.js", "client.js", "westie-bulb.png", "westie-collapsed.png", "THIRD_PARTY_ICONS.md", "locale/*.json", "cordis.patch.yml"],
+  "dsh": {
+    "bundle": {"patch": "./cordis.patch.yml"},
+    "client": {"platform": "web", "immediately": true, "inject": ["@deepseek-ai/dsh-client-ui-conversation", "@deepseek-ai/dsh-client-locale", "@deepseek-ai/dsh-api-gateway"]}
+  }
+}
