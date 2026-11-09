@@ -10,7 +10,17 @@ test('full-height transparent shells pass clicks through while content-sized scr
  assert.match(source,/\.st-board>\.st-error\{[^}]*pointer-events:auto/);
 });
 const code=source.split('// PANEL GEOMETRY START')[1].split('\n').slice(1).join('\n').split('// PANEL GEOMETRY END')[0];
-const {stickyBoardLayout,stickyResizeCard,stickyNewShortcut,stickyShouldPinFooter,stickyColumnLeft}=new Function(code+';return {stickyBoardLayout,stickyResizeCard,stickyNewShortcut,stickyShouldPinFooter,stickyColumnLeft};')();
+const {stickyBoardLayout,stickyResizeCard,stickyNewShortcut,stickyShouldPinFooter,stickyColumnLeft,stickySessionDock}=new Function(code+';return {stickyBoardLayout,stickyResizeCard,stickyNewShortcut,stickyShouldPinFooter,stickyColumnLeft,stickySessionDock};')();
+test('session header preserves the right board when the input dock disappears',()=>{
+ const anchor={kind:'session-anchor',sessionId:'A',top:40};
+ const wrong={kind:'dock',sessionId:'B',left:100,top:200,width:500};
+ const right={kind:'dock',sessionId:'A',left:400,top:200,width:500};
+ assert.deepEqual(stickySessionDock({anchor,wrong,right}),right);
+ assert.deepEqual(stickySessionDock({anchor,wrong}),{sessionId:'A',left:0,width:0});
+ assert.equal(stickySessionDock({wrong}),null);
+ assert.equal(stickySessionDock({anchor:{...anchor,top:0},wrong}),null);
+ assert.deepEqual(stickySessionDock({anchor:{...anchor,sessionId:'B'},wrong}),wrong);
+});
 const viewport={width:1512,height:949},geometry={left:300,top:160,width:170,composerBottom:900};
 const cards=[{id:'default'},{id:'second'}];
 test('blank and active sessions keep a 16px sidebar gap independently of centered composer position',()=>{

@@ -46,6 +46,12 @@ window.__ModuleLoader__.load({
       // Installed ConversationHeader uses a 20px left inset in both blank and active states.
       return Math.max(16,leadingLeft-20+16);
     }
+    function stickySessionDock(docks){
+      const values=Object.values(docks);
+      const anchor=values.find(d=>d.kind==='session-anchor'&&d.sessionId&&d.top>0);
+      if(!anchor)return null;
+      return values.filter(d=>d.kind==='dock'&&d.sessionId===anchor.sessionId&&d.width>0&&d.left>=0&&d.top>0).sort((a,b)=>a.left-b.left)[0]||{sessionId:anchor.sessionId,left:0,width:0};
+    }
     function stickyBoardLayout(cards,sizes,geometry,viewport){
       const maxCardWidth=Math.max(100,viewport.width-geometry.left-32),minWidth=Math.min(156,maxCardWidth),cardWidths={};
       for(const card of cards){const saved=sizes?.[card.id]?.width;cardWidths[card.id]=stickyClamp(Number.isFinite(saved)?saved:geometry.width,minWidth,maxCardWidth);}
@@ -486,7 +492,7 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,
       ctx.effect(()=>()=>sessions.forEach(s=>s.dispose()));
       function measureRef(kind,key,sessionId){return element=>{if(!element)return;};}
       function Leading(){const ref=useRef(null);useLayoutEffect(()=>{const update=()=>{const r=ref.current?.getBoundingClientRect();if(r&&r.width>=0){const prev=bus.get().leading;if(!prev||prev.left!==r.left||prev.top!==r.top)bus.set({leading:{left:r.left,top:r.top}});}};allMeasures.add(update);update();const ro=new ResizeObserver(measureAll);ro.observe(ref.current);return()=>{allMeasures.delete(update);ro.disconnect();};},[]);return h('span',{ref,'aria-hidden':true,style:{display:'inline-block',width:0,height:1,pointerEvents:'none'}});}
-      function Dock(props){const ref=useRef(null);const key=useRef(crypto.randomUUID()).current;useLayoutEffect(()=>{const update=()=>{const r=ref.current?.getBoundingClientRect();if(!r)return;const prev=bus.get().docks[key];if(!prev||prev.left!==r.left||prev.top!==r.top||prev.width!==r.width)bus.set({docks:{...bus.get().docks,[key]:{key,kind:props.kind||'dock',sessionId:props.sessionId,left:r.left,top:r.top,width:r.width}}});};allMeasures.add(update);update();const ro=new ResizeObserver(measureAll);ro.observe(ref.current);return()=>{ro.disconnect();allMeasures.delete(update);const docks={...bus.get().docks};delete docks[key];bus.set({docks});};},[props.sessionId]);return h('div',{ref,'aria-hidden':true,style:props.kind==='composer-bottom'?{position:'absolute',alignSelf:'flex-start',width:0,height:0,transform:'translateY(-4px)',pointerEvents:'none'}:{height:0,width:'100%',minHeight:0,pointerEvents:'none'}});}
+      function Dock(props){const ref=useRef(null);const key=useRef(crypto.randomUUID()).current;useLayoutEffect(()=>{const update=()=>{const r=ref.current?.getBoundingClientRect();if(!r)return;const prev=bus.get().docks[key];if(!prev||prev.left!==r.left||prev.top!==r.top||prev.width!==r.width)bus.set({docks:{...bus.get().docks,[key]:{key,kind:props.kind||'dock',sessionId:props.sessionId,left:r.left,top:r.top,width:r.width}}});};allMeasures.add(update);update();const ro=new ResizeObserver(measureAll);ro.observe(ref.current);return()=>{ro.disconnect();allMeasures.delete(update);const docks={...bus.get().docks};delete docks[key];bus.set({docks});};},[props.sessionId]);return h('div',{ref,'aria-hidden':true,style:props.kind==='composer-bottom'?{position:'absolute',alignSelf:'flex-start',width:0,height:0,transform:'translateY(-4px)',pointerEvents:'none'}:props.kind==='session-anchor'?{position:'absolute',width:0,height:0,pointerEvents:'none'}:{height:0,width:'100%',minHeight:0,pointerEvents:'none'}});}
       // The installed composer dock sits directly below its card with 4px top padding.
       // Its out-of-flow, flex-start marker cancels that padding without changing layout.
       function ComposerBottom(props){const input=props.useInput(s=>s);useLayoutEffect(()=>{measureAll();},[input]);return h(Dock,{...props,kind:'composer-bottom'});}
@@ -714,7 +720,7 @@ function Widget({sessionId,geometry}){
     !isCollapsed&&h(StickySelectionTools,{selection,toolsRef}));
 }
 
-      function Overlay(props){useLanguage();const layout=useSyncExternalStore(bus.subscribe,bus.get);const panel=props.usePanelInfo(s=>s.activePanelId);const docks=Object.values(layout.docks).filter(d=>d.kind==='dock'&&d.width>0&&d.left>=0&&d.top>0).sort((a,b)=>a.left-b.left);const dock=docks[0],leading=layout.leading;
+      function Overlay(props){useLanguage();const layout=useSyncExternalStore(bus.subscribe,bus.get);const panel=props.usePanelInfo(s=>s.activePanelId);const dock=stickySessionDock(layout.docks),leading=layout.leading;
         if((panel!==null&&panel!=='conversation')||!dock||!leading)return h('div',{className:'dsh-sticky-root'},h('style',null,css));
         // Hero/New Session centers its dock; it is not a pane-edge anchor there.
         // The persistent header-leading marker stays at the same pane edge in both states.
@@ -727,6 +733,7 @@ function Widget({sessionId,geometry}){
         return h('div',{className:'dsh-sticky-root'},h('style',null,css),h(Widget,{key:dock.sessionId,sessionId:dock.sessionId,geometry}));
       }
       ctx.slots.inject('conversation.header.leading',()=>ctx.slots.register({name:'conversation.header.leading'},Leading));
+      ctx.slots.inject('conversation.session.header.utilities',()=>ctx.slots.register({name:'conversation.session.header.utilities',id:'stickies-session-anchor',order:-100},props=>h(Dock,{...props,kind:'session-anchor'})));
       ctx.slots.inject('conversation.input.dock',()=>ctx.slots.register({name:'conversation.input.dock',id:'stickies-measure',order:-100},Dock));
       ctx.slots.inject('conversation.composer.dock',()=>ctx.slots.register({name:'conversation.composer.dock',id:'stickies-composer-bottom',order:-100},ComposerBottom));
       ctx.slots.inject('conversation.chat.turnTail',()=>ctx.slots.register({name:'conversation.chat.turnTail',id:'stickies-chat-edge',order:-100},props=>h(Dock,{...props,kind:'chat'})));

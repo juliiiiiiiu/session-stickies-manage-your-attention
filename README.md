@@ -1,15 +1,35 @@
-# Julie's session stickies
+# Session Stickies - Manage Your Attention
 
-Colorful, session-specific sticky cards beside your DeepSeek Harness conversation. Capture notes without interrupting your chat, then optionally authorize selected notes as sequential agent follow-ups.
+**Stay on track while you work on multiple agent tasks**
 
-![Julie's session stickies in a DeepSeek Harness session](cover-private-redacted.png)
+A plugin that keeps ideas, questions, and follow-ups next to the session they belong to—so you can switch tasks without losing your train of thought.
 
-## Features
+![Session Stickies in a DeepSeek Harness session](session-stickies-cover.png)
 
-- Multiple named, resizable cards per session, with editable checklists, bullets, numbering, text and colors.
-- Notes persist per session; browser-local drafts and card sizes stay on the current browser.
-- Collapse the board when you need more space. Use ⌘⌥⇧N on macOS or Ctrl+Alt+Shift+N on Windows while the expanded board is focused in the current view.
-- Auto run is opt-in: choose notes and **Answer only** or **Execute**, then explicitly run the queue. Ordinary notes and agent tools cannot authorize it.
+## The problem
+
+Agents can work in parallel. Human attention can’t.
+
+While an agent is working, you might think of a small change, a question, or something to check. You don’t want to interrupt the task or open a new worktree for every idea. But after switching to another session, it’s easy to forget what you had in mind.
+
+## How it helps
+
+- **Jot down ideas** as they come, without interrupting the agent.
+- **Keep questions, tasks, and checkpoints separate**, so each gets the right attention.
+- **Turn notes into action** by asking the agent to execute a task or answer a question.
+- **Keep work moving** by letting the agent process selected notes in order after the current task finishes.
+
+Session Stickies helps you capture a thought, return to it in context, and turn it into the agent’s next action.
+
+## Three styles
+
+![Classic, Morandi and Playful sticky styles](session-stickies-three-styles.png)
+
+## Compatibility
+
+Currently available for **DeepSeek Harness (DSH)**. Support for other agent harnesses is planned.
+
+**Topics:** `deepseek-harness` `ai-agents` `agent-tools` `session-stickies` `attention-management` `focus` `context-switching` `productivity` `adhd-friendly`
 
 ## Installation
 
