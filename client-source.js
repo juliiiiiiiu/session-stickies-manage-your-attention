@@ -2,6 +2,7 @@ window.__ModuleLoader__.load({
   id: 'dsh-julies-session-stickies',
   factory(require) {
     const React = require('react');
+    const {createPortal} = require('react-dom');
     const {useState,useEffect,useLayoutEffect,useRef,useSyncExternalStore} = React;
     const h = React.createElement;
     const DOG = '__WESTIE_DATA_URI__';
@@ -213,7 +214,7 @@ window.__ModuleLoader__.load({
       }
       __STICKY_BOARD_SOURCE__
       function Overlay(props){useLanguage();const layout=useSyncExternalStore(bus.subscribe,bus.get);const panel=props.usePanelInfo(s=>s.activePanelId);const dock=stickySessionDock(layout.docks),leading=layout.leading;
-        if((panel!==null&&panel!=='conversation')||!dock||!leading)return h('div',{className:'dsh-sticky-root'},h('style',null,css));
+        if((panel!==null&&panel!=='conversation')||!dock||!leading)return null;
         // Hero/New Session centers its dock; it is not a pane-edge anchor there.
         // The persistent header-leading marker stays at the same pane edge in both states.
         const left=stickyColumnLeft(leading.left);
@@ -222,7 +223,8 @@ window.__ModuleLoader__.load({
         const chatLeft=chatEdges.length?Math.min(...chatEdges.map(d=>d.left)):(dock.left>leading.left?dock.left:left+188);
         const available=Math.max(0,chatLeft-left-18);
         const height=layout.viewport.height;const top=Math.max(48,Math.min(leading.top+105,height-140));const composerBottom=Object.values(layout.docks).filter(d=>d.kind==='composer-bottom'&&d.sessionId===dock.sessionId&&d.top>0).sort((a,b)=>Math.abs(a.left-(dock.left+dock.width/2))-Math.abs(b.left-(dock.left+dock.width/2)))[0]?.top;const geometry={...stickyGutterGeometry(left,top,available,layout.viewport),composerBottom};
-        return h('div',{className:'dsh-sticky-root'},h('style',null,css),h(Widget,{key:dock.sessionId,sessionId:dock.sessionId,geometry}));
+        // Escape the shell's stacking context so body-level theme decorations cannot cover notes.
+        return createPortal(h('div',{className:'dsh-sticky-root'},h('style',null,css),h(Widget,{key:dock.sessionId,sessionId:dock.sessionId,geometry})),document.body);
       }
       ctx.slots.inject('conversation.header.leading',()=>ctx.slots.register({name:'conversation.header.leading'},Leading));
       ctx.slots.inject('conversation.session.header.utilities',()=>ctx.slots.register({name:'conversation.session.header.utilities',id:'stickies-session-anchor',order:-100},props=>h(Dock,{...props,kind:'session-anchor'})));

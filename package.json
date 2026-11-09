@@ -1,6 +1,6 @@
 {
   "name": "dsh-julies-session-stickies",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Session Stickies - Manage Your Attention: session notes and explicitly authorized agent follow-ups",
   "private": true,
   "repository": {"type": "git", "url": "https://github.com/juliiiiiiiu/session-stickies-manage-your-attention.git"},
