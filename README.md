@@ -33,7 +33,7 @@ Currently available for **DeepSeek Harness (DSH)**. Support for other agent harn
 
 ## Installation
 
-This plugin targets the DeepSeek Harness desktop/web profile with protocol version `0.2.2-rc.1`. Install the GitHub bundle from Plugin Manager using `github:juliiiiiiiu/session-stickies-manage-your-attention`. A page refresh may be needed after activation. GitHub installs can require build permission according to your package manager's policy; inspect the source before allowing it.
+This plugin targets the DeepSeek Harness desktop/web profile with protocol version `0.2.2-rc.1`. Install the GitHub bundle from Plugin Manager using `github:juliiiiiiiu/session-stickies-manage-your-attention`, or the public npm package `dsh-julies-session-stickies`. A page refresh may be needed after activation. GitHub installs can require build permission according to your package manager's policy; inspect the source before allowing it.
 
 The plugin displays beside conversations. Its dog button collapses or expands the board. Enter commits a new note, and Shift+Enter inserts a line break. The card title can be edited directly.
 
