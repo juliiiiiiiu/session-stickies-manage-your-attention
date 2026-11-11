@@ -76,7 +76,7 @@ export class StickiesHost {
         }
         const next = operate(this.state(agent.id), request, { user });
         if (request.action !== 'list') await this.save(agent.id, next);
-        if (request.action === 'queue') {
+        if (request.action === 'queue' || request.action === 'liveCreate') {
           if (signal?.aborted) {
             const paused = clone(this.state(agent.id)); paused.queue.status = 'paused'; paused.queue.error = 'Authorization request was canceled.'; paused.revision++;
             await this.save(agent.id, paused); fail('ABORTED', paused.queue.error);
@@ -95,7 +95,11 @@ export class StickiesHost {
     // Wait for a committed turn boundary, not an idle interval or assistant stream end.
     if (this.agents.turnBoundaryOf(agent.session).openTurnStartSeq !== null) return;
     const item = q.items.find(i => i.status === 'pending');
-    if (!item) { q.status = 'completed'; state.revision++; await this.save(id, state); return; }
+    if (!item) {
+      const status = q.liveCardId !== undefined ? 'armed' : 'completed';
+      if (q.status !== status) { q.status = status; state.revision++; await this.save(id, state); }
+      return;
+    }
     item.messageId = randomUUID(); item.status = 'dispatching'; q.status = 'running'; state.revision++;
     // Persist dispatch intent BEFORE followup. A crash in either gap is uncertain, never auto-retried.
     await this.save(id, state);
@@ -242,7 +246,8 @@ export async function apply(ctx, config = {}, protocol) {
       let result;
       try {
         const request = JSON.parse(rawInput);
-        if (request.action !== 'queue') fail('COMMAND_ACTION', 'Use the Stickies panel for note editing; this command only authorizes a queue.');
+        if (request.action === 'liveCapabilities') return { kind: 'success', text: JSON.stringify({ ok: true, liveQueue: 1 }) };
+        if (!['queue', 'liveCreate', 'liveReorder'].includes(request.action)) fail('COMMAND_ACTION', 'This command accepts queue, liveCreate, or liveReorder only.');
         result = await host.request(agent, request, true, signal);
       }
       catch (error) { result = { ok: false, error: errorValue(error) }; }

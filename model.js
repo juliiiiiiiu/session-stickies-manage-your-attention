@@ -58,8 +58,34 @@ export function operate(state, request, { user = false, now = Date.now(), uuid =
   if (!request || typeof request !== 'object' || Array.isArray(request)) fail('INVALID_REQUEST', 'Expected an operation object.');
   const { action } = request;
   if (action === 'list') return normalizeCards(clone(state));
-  if (!PUBLIC_ACTIONS.includes(action) && action !== 'queue') fail('INVALID_ACTION', 'Unknown operation.');
-  if (action === 'queue' && !user) fail('USER_ONLY', 'Only a user session command can authorize an automatic queue.');
+  const userActions = ['queue', 'liveCreate', 'liveReorder'];
+  if (!PUBLIC_ACTIONS.includes(action) && !userActions.includes(action)) fail('INVALID_ACTION', 'Unknown operation.');
+  if (userActions.includes(action) && !user) fail('USER_ONLY', 'Only a user session command can authorize or change live queue work.');
+  if (action === 'liveCreate') {
+    if (!request.note || typeof request.note !== 'object' || Array.isArray(request.note) || Object.hasOwn(request.note, 'action')) fail('INVALID_REQUEST', 'Expected a note creation object.');
+    const existed = request.note.id && state.notes.some(n => n.id === request.note.id);
+    const next = operate(state, { ...request.note, action: 'create' }, { user, now, uuid });
+    if (existed) return next;
+    const n = next.notes.at(-1), q = next.queue;
+    if (['armed', 'running'].includes(q.status) && q.liveCardId === n.cardId && n.text.trim()) {
+      if (q.items.length >= 100) fail('LIMIT', 'The queue already has 100 items.');
+      q.items.push({ id: uuid(), noteId: n.id, text: n.text, mode: q.liveMode, status: 'pending', result: '', error: null });
+    }
+    return next;
+  }
+  if (action === 'liveReorder') {
+    if (typeof request.cardId !== 'string') fail('INVALID_CARD', 'A card ID is required for live reorder.');
+    const next = operate(state, { action: 'reorder', cardId: request.cardId, ids: request.ids }, { user, now, uuid });
+    const q = next.queue;
+    if (['armed', 'running'].includes(q.status) && q.liveCardId === request.cardId) {
+      const positions = new Map(request.ids.map((id, index) => [id, index]));
+      const pending = q.items.filter(item => item.status === 'pending' && positions.has(item.noteId));
+      pending.sort((a, b) => positions.get(a.noteId) - positions.get(b.noteId));
+      let index = 0;
+      q.items = q.items.map(item => item.status === 'pending' && positions.has(item.noteId) ? pending[index++] : item);
+    }
+    return next;
+  }
   const next = normalizeCards(clone(state));
   const note = () => { const n = next.notes.find(n => n.id === request.id); if (!n) fail('NOT_FOUND', 'Note does not exist in this session.'); return n; };
   const requireCard = id => { const card = next.cards.find(c => c.id === id); if (!card) fail('INVALID_CARD', 'Card does not exist in this session.'); return card; };
@@ -80,6 +106,10 @@ export function operate(state, request, { user = false, now = Date.now(), uuid =
     if (pending.length) {
       for (const item of pending) { item.status = 'canceled'; item.error = 'Card deleted before dispatch.'; }
       next.queue.status = 'paused'; next.queue.error = 'A card with pending work was deleted. Review remaining work before authorizing again.';
+    }
+    if (next.queue.liveCardId === request.id) {
+      next.queue.status = 'paused'; next.queue.error = 'The live queue card was deleted. Authorize a new queue to continue.';
+      delete next.queue.liveCardId; delete next.queue.liveMode;
     }
     next.cards = next.cards.filter(c => c.id !== request.id);
     next.notes = next.notes.filter(n => !ids.has(n.id));
@@ -118,16 +148,24 @@ export function operate(state, request, { user = false, now = Date.now(), uuid =
     if (['running', 'dispatching'].includes(item.status)) fail('ITEM_IN_FLIGHT', 'This item has already been dispatched. Use the session stop control to interrupt it.');
     if (item.status !== 'pending') fail('ITEM_SETTLED', 'Only a pending item can be canceled.');
     item.status = 'canceled'; item.error = 'Canceled before dispatch.';
-    if (!next.queue.items.some(i => ['pending', 'running', 'dispatching'].includes(i.status))) next.queue.status = 'completed';
+    if (!next.queue.items.some(i => ['pending', 'running', 'dispatching'].includes(i.status))) {
+      next.queue.status = ['armed', 'running'].includes(next.queue.status) && next.queue.liveCardId !== undefined ? 'armed' : 'completed';
+    }
   } else if (action === 'queue') {
     if (['armed', 'running'].includes(next.queue.status)) fail('BUSY_QUEUE', 'Pause the current queue before authorizing a replacement. Replacement discards remaining pending items.');
     if (next.queue.items.some(i => i.status === 'running' || i.status === 'dispatching')) fail('BUSY', 'The previous queue still has an in-flight item.');
     if (request.replacePending === false && next.queue.items.some(i => i.status === 'pending')) fail('BUSY_QUEUE', 'Pending items remain in this session. Cancel them explicitly before starting another queue.');
     const items = request.items ?? request.ids?.map(id => ({ id, mode: request.mode }));
-    if (!Array.isArray(items) || items.length < 1 || items.length > 100 || new Set(items.map(i => i?.id)).size !== items.length) fail('INVALID_QUEUE', 'Provide 1–100 distinct notes.');
-    next.queue = { status: 'armed', error: null, authorizedAt: now, items: items.map(item => {
+    const live = request.liveCardId !== undefined || request.liveMode !== undefined;
+    if (live) {
+      if (typeof request.liveCardId !== 'string') fail('INVALID_CARD', 'Choose an existing live queue card.');
+      requireCard(request.liveCardId);
+      if (!['answer', 'execute'].includes(request.liveMode)) fail('INVALID_MODE', 'Choose answer or execute for live notes.');
+    }
+    if (!Array.isArray(items) || items.length < (live ? 0 : 1) || items.length > 100 || new Set(items.map(i => i?.id)).size !== items.length) fail('INVALID_QUEUE', 'Provide distinct notes (up to 100).');
+    next.queue = { status: 'armed', error: null, authorizedAt: now, ...(live ? { liveCardId: request.liveCardId, liveMode: request.liveMode } : {}), items: items.map(item => {
       const n = next.notes.find(n => n.id === item.id && n.archivedAt === null);
-      if (!n || !n.text.trim()) fail('INVALID_NOTE', 'Queued notes must be active and non-empty.');
+      if (!n || !n.text.trim() || (live && n.cardId !== request.liveCardId)) fail('INVALID_NOTE', 'Queued notes must be active, non-empty, and in the selected live card.');
       if (!['answer', 'execute'].includes(item.mode)) fail('INVALID_MODE', 'Choose answer or execute for each item.');
       return { id: uuid(), noteId: n.id, text: n.text, mode: item.mode, status: 'pending', result: '', error: null };
     }) };
@@ -145,10 +183,14 @@ export function validateStored(state) {
     if (typeof item.id !== 'string' || typeof item.noteId !== 'string' || typeof item.text !== 'string' || !['answer', 'execute'].includes(item.mode) || !['pending', 'dispatching', 'running', 'completed', 'failed', 'canceled', 'uncertain'].includes(item.status)) fail('INVALID_STORAGE', 'Invalid stored queue item.');
   }
   const normalized = clone(state);
+  if ((normalized.queue.liveCardId !== undefined || normalized.queue.liveMode !== undefined) &&
+      (typeof normalized.queue.liveCardId !== 'string' || !['answer', 'execute'].includes(normalized.queue.liveMode))) fail('INVALID_STORAGE', 'Invalid live queue authorization.');
   for (const n of normalized.notes) {
     if (typeof n.id !== 'string' || !Number.isFinite(n.createdAt) || !Number.isFinite(n.updatedAt) || !(n.archivedAt === null || Number.isFinite(n.archivedAt))) fail('INVALID_STORAGE', 'Invalid stored note.');
     fields({ text: n.text, style: n.style, color: n.color, fontSize: n.fontSize, checked: n.checked });
     n.marks = validateMarks(n.marks === undefined ? [] : n.marks, n.text);
   }
-  return normalizeCards(normalized);
+  normalizeCards(normalized);
+  if (normalized.queue.liveCardId !== undefined && !normalized.cards.some(c => c.id === normalized.queue.liveCardId)) fail('INVALID_STORAGE', 'Live queue references a missing card.');
+  return normalized;
 }

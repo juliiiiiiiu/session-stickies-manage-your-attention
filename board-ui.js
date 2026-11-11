@@ -55,7 +55,7 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
   const settingsKey='dsh-stickies-draft-settings:'+sessionId+':'+card.id;
   const [formatOpen,setFormatOpen]=useState(false),[focused,setFocused]=useState(null),[settings,setSettings]=useState(()=>{const v=stickyReadLocal(settingsKey,{}),migrationKey=settingsKey+':bullet-default-v1';const migrated=stickyReadLocal(migrationKey,false);if(!migrated){if(v.style==='checkbox')v.style='bullet';stickyWriteLocal(migrationKey,true);}return {style:['text','checkbox','bullet','numbered'].includes(v?.style)?v.style:'bullet',fontSize:Number.isInteger(v?.fontSize)&&v.fontSize>=10&&v.fontSize<=32?v.fontSize:12,color:['default','accent','success','warn','error'].includes(v?.color)?v.color:'default'};});
   useEffect(()=>stickyWriteLocal(settingsKey,settings),[settingsKey,settings]);
-  const [runOpen,setRunOpen]=useState(false),[runAnchor,setRunAnchor]=useState(null),[runMode,setRunMode]=useState('execute'),[busy,setBusy]=useState(false);
+  const [runOpen,setRunOpen]=useState(false),[runAnchor,setRunAnchor]=useState(null),[runMode,setRunMode]=useState('execute'),[busy,setBusy]=useState(false),[confirmAuto,setConfirmAuto]=useState(false);
   const [drag,setDrag]=useState(null),[drop,setDrop]=useState(null),[footerPinned,setFooterPinned]=useState(false),[deleting,setDeleting]=useState(false);
   useLayoutEffect(()=>{
     const node=rootRef.current,scroll=node?.parentElement;if(!scroll?.classList.contains('st-board-scroll'))return;
@@ -67,6 +67,10 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
   const suffix=sessionId+(card.id==='default'?'':':'+card.id),draftKey='dsh-stickies-draft:'+suffix,marksKey='dsh-stickies-draft-marks:'+suffix;
   const [draft,setDraft]=useState(()=>{try{return localStorage.getItem(draftKey)||'';}catch{return '';}}),draftValue=useRef(draft);
   const [marks,setMarks]=useState(()=>stickyReadLocal(marksKey,[])),marksValue=useRef(marks);
+  const [draftVisible,setDraftVisible]=useState(true),focusDraftOnShow=useRef(false);
+  useLayoutEffect(()=>{if(draftVisible&&focusDraftOnShow.current){focusDraftOnShow.current=false;draftRef.current?.focus();}},[draftVisible]);
+  const showDraft=()=>{if(draftVisible)draftRef.current?.focus();else{focusDraftOnShow.current=true;setDraftVisible(true);}};
+  const removeEmptyDraft=()=>{if(draftValue.current)return;onSelection(null);setDraftVisible(false);const editors=rootRef.current?.querySelectorAll('[data-note-id] [contenteditable]');editors?.[editors.length-1]?.focus();};
   const deleteCard=async()=>{
     if(deleting)return;setDeleting(true);onSelection(null);setRunOpen(false);
     try{await store.flushAll();await store.run({action:'deleteCard',id:card.id});for(const key of [draftKey,marksKey,settingsKey,settingsKey+':bullet-default-v1']){try{localStorage.removeItem(key);}catch{}}onSize(card.id,null);}
@@ -86,7 +90,7 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
     const origin=document.activeElement;await store.flush(id);
     if(document.activeElement!==origin||!rootRef.current?.contains(origin))return;
     const index=active.findIndex(n=>n.id===id),next=active[index+1];
-    if(next)rootRef.current.querySelector(`[data-note-id="${next.id}"] [contenteditable]`)?.focus();else draftRef.current?.focus();
+    if(next)rootRef.current.querySelector(`[data-note-id="${next.id}"] [contenteditable]`)?.focus();else showDraft();
   };
   const move=async(id,delta)=>{const ids=active.map(n=>n.id),index=ids.indexOf(id),target=index+delta;if(index<0||target<0||target>=ids.length)return;[ids[index],ids[target]]=[ids[target],ids[index]];await store.run({action:'reorder',cardId:card.id,ids});};
   useEffect(()=>{
@@ -132,31 +136,41 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
   const queueItems=state.queue?.items?.filter(i=>cardNoteIds.has(i.noteId))||[];
   const queueActive=queueItems.some(i=>['pending','running','dispatching'].includes(i.status));
   const queueBlocked=['armed','running'].includes(state.queue?.status)||state.queue?.items?.some(i=>['pending','running','dispatching'].includes(i.status));
-  const switchOn=queueActive&&state.queue?.status!=='paused';
-  const toggleAuto=async()=>{
-    if(busy)return;setBusy(true);setRunOpen(false);
+  const switchOn=(state.queue?.liveCardId===card.id&&['armed','running'].includes(state.queue?.status))||(queueActive&&state.queue?.status!=='paused');
+  const toggleAuto=async(confirmed=false)=>{
+    if(busy)return;
+    // A toggle is not a request for a fresh empty note. Preserve any unsaved text.
+    if(!draftValue.current)setDraftVisible(false);
+    if(confirmed&&switchOn)return;
+    if(!switchOn&&!confirmed&&stickyReadLocal('dsh-stickies-auto-confirmed-v1',false)!==true){setConfirmAuto(true);return;}
+    setConfirmAuto(false);setBusy(true);setRunOpen(false);
     try{
       if(switchOn){
         await store.run({action:'pause'});
         for(const item of store.get().queue.items.filter(i=>cardNoteIds.has(i.noteId)&&i.status==='pending'))await store.run({action:'cancelItem',id:item.id});
       }else{
-        await commitDraft();await store.flushAll();
+        await commitDraft();if(!draftValue.current)setDraftVisible(false);await store.flushAll();
         const notes=store.get().notes.filter(n=>(n.cardId||'default')===card.id&&!n.archivedAt&&!n.checked&&n.text.trim());
-        if(!notes.length||notes.length>100)return;
-        await store.run({action:'queue',replacePending:false,items:notes.map(n=>({id:n.id,mode:runMode}))});
+        if(notes.length>100)return;
+        await store.run({action:'queue',replacePending:false,liveCardId:card.id,liveMode:runMode,items:notes.map(n=>({id:n.id,mode:runMode}))});
+        if(confirmed)stickyWriteLocal('dsh-stickies-auto-confirmed-v1',true);
       }
     }finally{setBusy(false);}
   };
-  const runPopover=runOpen&&runAnchor&&h('div',{ref:runPopoverRef,className:'st-mode-menu',role:'menu','aria-label':'Auto mode',style:{left:runAnchor.left,bottom:runAnchor.bottom}},...['execute','answer'].map(mode=>h(Button,{key:mode,role:'menuitemradio','aria-checked':runMode===mode,label:mode==='execute'?'Auto execute':'Answer only',onClick:()=>{setRunMode(mode);setRunOpen(false);}},mode==='execute'?'Auto execute':'Answer only')));
+  const runPopover=runOpen&&runAnchor&&h('div',{ref:runPopoverRef,className:'st-mode-menu',role:'menu','aria-label':'Auto mode',style:{left:runAnchor.left,bottom:runAnchor.bottom}},...['execute','answer'].map(mode=>h(Button,{key:mode,role:'menuitemradio','aria-checked':runMode===mode,label:mode==='execute'?'Auto Act':'Answer only',onClick:()=>{setRunMode(mode);setRunOpen(false);}},mode==='execute'?'Auto Act':'Answer only')));
   return h(React.Fragment,null,
     h('section',{ref:rootRef,className:'st-panel st-card',inert:deleting?true:undefined,'aria-busy':deleting,'data-card-id':card.id,'data-style':palette,'data-palette':cardIndex%6,'data-footer-pinned':footerPinned,'data-sized':manualHeight!==undefined,style:{width,height:manualHeight,minHeight:manualHeight===undefined?width:formatOpen?174:112,maxHeight:'none'},'aria-label':card.title},
       h(StickyTitle,{card,store,count,onDeleteCard:deleteCard,deleting}),toolbar,
       h('div',{className:'st-scroll st-card-body'},...active.map((note,index)=>h(NoteRow,{key:note.id,note,index,store,onFocus:setFocused,onEnter:id=>focusNext(id).catch(()=>{}),onMove:(id,delta)=>move(id,delta).catch(()=>{}),onSelection,drag,setDrag,drop,setDrop})),
-        h('div',{className:'st-row','data-style':settings.style},settings.style==='checkbox'?h('span',{className:'st-mark st-draft-check','aria-hidden':true}):h('span',{className:'st-mark','aria-hidden':true},settings.style==='bullet'?'✿':settings.style==='numbered'?`${active.length+1}.`:''),h(RichEditor,{editorRef:draftRef,note:{id:draftId,text:draft,marks,...settings},placeholder:count?'':t('empty'),ariaLabel:card.title+' '+t('empty'),onFocus:()=>setFocused(null),onChange:saveDraft,onBlur:e=>{if(e.relatedTarget?.closest?.('.st-selection-tools'))return;commitDraft().catch(()=>{});},onEnter:()=>commitDraft(true).catch(()=>{}),onSelection:value=>onSelection(prev=>value||(toolsRef.current?.contains(document.activeElement)?prev:prev?.noteId===draftId?null:prev))}))),
+        draftVisible?h('div',{className:'st-row st-draft-row','data-style':settings.style},settings.style==='checkbox'?h('span',{className:'st-mark st-draft-check','aria-hidden':true}):h('span',{className:'st-mark','aria-hidden':true},settings.style==='bullet'?'✿':settings.style==='numbered'?`${active.length+1}.`:''),h(RichEditor,{editorRef:draftRef,note:{id:draftId,text:draft,marks,...settings},placeholder:count?'':t('empty'),ariaLabel:card.title+' '+t('empty'),onFocus:()=>setFocused(null),onChange:saveDraft,onBlur:e=>{if(e.relatedTarget?.closest?.('.st-selection-tools'))return;commitDraft().catch(()=>{});},onEnter:()=>commitDraft(true).catch(()=>{}),onEmptyBackspace:removeEmptyDraft,onSelection:value=>onSelection(prev=>value||(toolsRef.current?.contains(document.activeElement)?prev:prev?.noteId===draftId?null:prev))}),!draft&&h(Button,{className:'st-row-delete',label:t('deleteEmpty'),icon:'trash',onMouseDown:e=>e.preventDefault(),onClick:removeEmptyDraft})):h(Button,{className:'st-add-note',label:t('addNote'),icon:'plus',onClick:showDraft},t('addNote'))),
       h('footer',{className:'st-footer st-footer-minimal'},
-        h('div',{className:'st-footer-controls'},h('div',{className:'st-auto-controls'},h(Button,{className:'st-auto-switch',role:'switch','aria-checked':switchOn,label:switchOn?'Turn off and cancel pending follow-ups; running work continues':'Authorize current notes only; starts after the current turn, or immediately if idle',disabled:busy||(!switchOn&&(queueBlocked||(!active.some(n=>!n.checked&&n.text.trim())&&!draft.trim())||active.filter(n=>!n.checked&&n.text.trim()).length>100)),onClick:toggleAuto},h('span',{'aria-hidden':true})),
-          h('div',{ref:runButtonRef,className:'st-mode-anchor'},h(Button,{className:'st-auto-run',label:runMode==='execute'?'Auto execute':'Answer only','aria-haspopup':'menu','aria-expanded':runOpen,disabled:busy||switchOn,onClick:()=>{const r=runButtonRef.current?.getBoundingClientRect();if(r)setRunAnchor({left:Math.max(8,Math.min(r.left,window.innerWidth-160)),bottom:window.innerHeight-r.top+4});setRunOpen(v=>!v);}},runMode==='execute'?'Auto execute':'Answer only',h(Icon,{name:'down'})))),
-        h(Button,{className:'st-format-toggle',label:t('format'),icon:'type','aria-expanded':formatOpen,onClick:()=>setFormatOpen(v=>!v)}))),...handles),runPopover);
+        h('div',{className:'st-footer-controls'},h('div',{className:'st-auto-controls'},h(Button,{className:'st-auto-switch',role:'switch','aria-checked':switchOn,label:switchOn?'Turn off and cancel pending follow-ups; running work continues':'Authorize current and newly committed notes on this sticky until switched off; follows the visible order',disabled:busy||(!switchOn&&(state.loading||queueBlocked||active.filter(n=>!n.checked&&n.text.trim()).length>100)),onClick:()=>toggleAuto()},h('span',{'aria-hidden':true})),
+          h('div',{ref:runButtonRef,className:'st-mode-anchor'},h(Button,{className:'st-auto-run',label:runMode==='execute'?'Auto Act':'Answer only','aria-haspopup':'menu','aria-expanded':runOpen,disabled:busy||switchOn,onClick:()=>{const r=runButtonRef.current?.getBoundingClientRect();if(r)setRunAnchor({left:Math.max(8,Math.min(r.left,window.innerWidth-160)),bottom:window.innerHeight-r.top+4});setRunOpen(v=>!v);}},runMode==='execute'?'Auto Act':'Answer only',h(Icon,{name:'down'})))),
+        h(Button,{className:'st-format-toggle',label:t('format'),icon:'type','aria-expanded':formatOpen,onClick:()=>setFormatOpen(v=>!v)}))),...handles),runPopover,
+    confirmAuto&&h(Dialog,{title:t('liveTitle'),className:'st-auto-dialog',onClose:()=>setConfirmAuto(false)},
+      h('p',null,t('liveConfirm')),
+      h('p',null,t('liveSnapshot'),' ',t('liveRisk')),
+      h('div',{className:'st-auto-dialog-actions'},h(Button,{label:t('cancel'),autoFocus:true,onClick:()=>setConfirmAuto(false)},t('cancel')),h(Button,{className:'st-confirm-auto',label:t('liveEnable'),disabled:busy||queueBlocked,onClick:()=>toggleAuto(true)},t('liveEnable')))));
 }
 
 function Widget({sessionId,geometry}){

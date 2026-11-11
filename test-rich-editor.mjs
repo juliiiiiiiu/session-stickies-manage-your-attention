@@ -4,7 +4,16 @@ import { readFile } from 'node:fs/promises';
 import {initialState,operate} from './model.js';
 const source = await readFile(new URL('./rich-editor.js', import.meta.url), 'utf8');
 const pure = source.split('// PURE HELPERS START')[1].split('// PURE HELPERS END')[0];
-const {stickyNormalizeMarks:normalize,stickyPackMarks:pack,stickyApplyMarks:apply,stickyReplaceText:replace,stickyReconcileText:reconcile,stickyEditorPolicy:policy} = Function(pure+';return {stickyNormalizeMarks,stickyPackMarks,stickyApplyMarks,stickyReplaceText,stickyReconcileText,stickyEditorPolicy};')();
+const {stickyNormalizeMarks:normalize,stickyPackMarks:pack,stickyApplyMarks:apply,stickyReplaceText:replace,stickyReconcileText:reconcile,stickyEditorPolicy:policy,stickyCanRemoveEmptyDraft:canRemoveDraft} = Function(pure+';return {stickyNormalizeMarks,stickyPackMarks,stickyApplyMarks,stickyReplaceText,stickyReconcileText,stickyEditorPolicy,stickyCanRemoveEmptyDraft};')();
+
+test('empty draft Backspace is removable without touching text or IME',()=>{
+  assert.equal(canRemoveDraft('',{key:'Backspace'},false,true),true);
+  assert.equal(canRemoveDraft('',{inputType:'deleteContentBackward'},false,true),true);
+  assert.equal(canRemoveDraft('x',{key:'Backspace'},false,true),false);
+  assert.equal(canRemoveDraft('',{key:'Backspace',isComposing:true},false,true),false);
+  assert.equal(canRemoveDraft('',{key:'Backspace',metaKey:true},false,true),false);
+  assert.equal(canRemoveDraft('',{key:'Backspace'},false,false),false);
+});
 
 test('256 legal overlapping marks serialize 511 render runs losslessly back into Host limit',()=>{
   const text='x'.repeat(512),marks=[{start:0,end:512,bold:true},...Array.from({length:255},(_,i)=>({start:2*i+1,end:2*i+2,color:'error'}))];

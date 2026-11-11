@@ -110,12 +110,15 @@ function stickyEditorPolicy({reason='input',editorActive=false,composing=false,s
     commitNative: !composing || reason==='blur',
   };
 }
+function stickyCanRemoveEmptyDraft(text,event,composing,hasHandler){
+  return !!hasHandler&&!composing&&!event.isComposing&&event.keyCode!==229&&!text&&!event.altKey&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&(event.key==='Backspace'||event.inputType==='deleteContentBackward');
+}
 // PURE HELPERS END
 
-function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,editorRef,placeholder,ariaLabel}) {
+function RichEditor({note,onChange,onFocus,onBlur,onEnter,onEmptyBackspace,onMoveKey,onSelection,editorRef,placeholder,ariaLabel}) {
   const element=useRef(null), composing=useRef(false), pendingSelection=useRef(null), ownedSelection=useRef(false), blurred=useRef(false);
   const value=useRef({text:note.text||'',marks:stickyNormalizeMarks(note.text||'',note.marks)});
-  const callbacks=useRef({}); callbacks.current={onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,note};
+  const callbacks=useRef({}); callbacks.current={onChange,onFocus,onBlur,onEnter,onEmptyBackspace,onMoveKey,onSelection,note};
   const history=useRef({undo:[],redo:[]}), nativeEdit=useRef(null), renderStamp=useRef('');
   const colors={default:'var(--dsw-alias-label-primary)',accent:'var(--dsw-alias-brand-primary)',success:'var(--dsw-alias-state-success-primary)',warn:'var(--dsw-alias-state-warn-primary)',error:'var(--dsw-alias-state-error-primary)'};
   function editorPolicy(reason='input') {
@@ -252,6 +255,7 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,
     const beforeInput=e=>{
       if(composing.current||e.isComposing)return;
       if(e.inputType==='historyUndo'||e.inputType==='historyRedo'){e.preventDefault();undo(e.inputType==='historyRedo');return;}
+      if(stickyCanRemoveEmptyDraft(value.current.text,e,composing.current,callbacks.current.onEmptyBackspace)){e.preventDefault();callbacks.current.onEmptyBackspace();return;}
       if(e.inputType==='insertParagraph'){e.preventDefault();callbacks.current.onEnter?.();return;}
       if(e.inputType==='insertLineBreak'){e.preventDefault();insertText('\n');return;}
       if(e.inputType?.startsWith('format')){e.preventDefault();return;}
@@ -288,6 +292,7 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,
     onDragOver:e=>e.preventDefault(),onDrop:e=>{e.preventDefault();},
     onKeyDown:e=>{
       if(e.nativeEvent.isComposing||composing.current||e.keyCode===229)return;
+      if(stickyCanRemoveEmptyDraft(value.current.text,e,composing.current,callbacks.current.onEmptyBackspace)){e.preventDefault();callbacks.current.onEmptyBackspace();return;}
       if(e.altKey&&['ArrowUp','ArrowDown'].includes(e.key)){callbacks.current.onMoveKey?.(e);return;}
       if((e.metaKey||e.ctrlKey)&&!e.altKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo(e.shiftKey);return;}
       if(e.ctrlKey&&!e.metaKey&&e.key.toLowerCase()==='y'){e.preventDefault();undo(true);return;}

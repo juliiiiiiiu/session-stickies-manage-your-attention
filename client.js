@@ -10,8 +10,8 @@ window.__ModuleLoader__.load({
     const zh = {deleteSticky:'删除整张便利贴',deleteStickyAsk:'删除这张便利贴及其中所有内容？此操作无法撤销。',archived:'已归档',undoArchive:'撤销',sharedQueue:'会话共享队列',queueBlocked:'已有任务，请等待完成或取消待处理任务。',cancelPending:'取消待处理',newSticky:'New sticky',renameSticky:'重命名便利贴',resizeSticky:'调整便利贴大小；双击恢复默认',boardLabel:'便利贴容器',bold:'加粗',executeHint:'执行所选笔记，可能修改文件。',answerHint:'仅分析和回答，不主动修改文件。',title:'便利贴',history:'历史',archive:'归档',back:'返回笔记',collapse:'收起便利贴',expand:'展开便利贴',saved:'已保存',saving:'保存中…',retry:'重试',error:'保存失败，内容仍保留',empty:'写下笔记…',hint:'Enter 新增 · Shift + Enter 换行',auto:'Auto run',select:'选择自动处理的笔记',after:'本轮正常结束后交给 Agent；当前空闲则立即开始。',selection:'此处勾选只表示加入队列，不会完成原笔记。',execute:'自动执行',answer:'自动回答',cancel:'取消',queue:'加入自动处理',pause:'暂停后续处理',waiting:'等待处理',running:'处理中',paused:'已暂停',completed:'已完成',failed:'处理失败',uncertain:'结果待核实',idle:'仅记录',delete:'删除笔记',restore:'恢复笔记',done:'标记完成',undone:'取消完成',archiveDone:'归档已完成',noArchive:'还没有归档笔记',search:'搜索归档',format:'文字大小',style:'列表样式',color:'文字颜色',checkbox:'待办列表',bullet:'项目符号',numbered:'编号列表',text:'普通文本',default:'默认',accent:'强调',success:'绿色',warn:'提醒',danger:'红色',move:'长按拖动；Alt + ↑/↓ 排序',up:'上移',down:'下移',deleteAsk:'删除这条笔记？',confirmDelete:'删除',result:'查看结果',close:'关闭',permission:'不经过输入框 · 遵守当前权限',loading:'正在加载…',nothing:'没有待处理笔记',queueConfirm:'所选笔记会启动后续任务。自动执行可能修改文件，自动回答只分析和解释。',refresh:'刷新',offline:'连接失败，请重试',emptyTitle:'未命名笔记',canceled:'已取消',dispatching:'准备处理',pending:'等待处理',clearQueue:'取消所选排队项'};
     const en = {deleteSticky:'Delete sticky',deleteStickyAsk:'Delete this sticky and all its contents? This cannot be undone.',archived:'Archived',undoArchive:'Undo',sharedQueue:'Session queue',queueBlocked:'Tasks already queued. Wait or cancel pending tasks.',cancelPending:'Cancel pending',newSticky:'New sticky',renameSticky:'Rename sticky',resizeSticky:'Resize sticky; double-click to reset',boardLabel:'Sticky notes',bold:'Bold',executeHint:'Execute selected notes; may change files.',answerHint:'Analyze and answer only; no file changes.',title:'Stickies',history:'History',archive:'Archive',back:'Back to notes',collapse:'Collapse notes',expand:'Open notes',saved:'Saved',saving:'Saving…',retry:'Retry',error:'Save failed; your edits are retained',empty:'Write a note…',hint:'Enter: new note · Shift + Enter: new line',auto:'Auto run',select:'Choose notes for the Agent',after:'Start after this turn finishes normally, or now if idle.',selection:'Selection adds to the queue; it does not complete the note.',execute:'Execute',answer:'Answer only',cancel:'Cancel',queue:'Add to queue',pause:'Pause remaining tasks',waiting:'Waiting',running:'Running',paused:'Paused',completed:'Completed',failed:'Failed',uncertain:'Check outcome',idle:'Note only',delete:'Delete note',restore:'Restore note',done:'Mark complete',undone:'Mark incomplete',archiveDone:'Archive completed',noArchive:'No archived notes yet',search:'Search archive',format:'Text size',style:'List style',color:'Text color',checkbox:'Checklist',bullet:'Bullets',numbered:'Numbered',text:'Plain text',default:'Default',accent:'Accent',success:'Green',warn:'Warning',danger:'Red',move:'Hold to drag; Alt + ↑/↓ to reorder',up:'Move up',down:'Move down',deleteAsk:'Delete this note?',confirmDelete:'Delete',result:'View result',close:'Close',permission:'Leaves composer untouched · Respects permissions',loading:'Loading…',nothing:'No pending notes',queueConfirm:'Selected notes start follow-up tasks. Execute may change files; Answer only analyzes and explains.',refresh:'Refresh',offline:'Connection failed. Retry.',emptyTitle:'Untitled note',canceled:'Canceled',dispatching:'Starting',pending:'Waiting',clearQueue:'Cancel queued item'};
     const paths = {'list-todo':'M13 5h8 M13 12h8 M13 19h8 M3 17l2 2 4-4','list-bullet':'M3 5h.01 M3 12h.01 M3 19h.01 M8 5h13 M8 12h13 M8 19h13','list-numbered':'M11 5h10 M11 12h10 M11 19h10 M4 4h1v5 M4 9h2 M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02','plain-text':'M21 5H3 M15 12H3 M17 19H3',plus:'M12 5v14 M5 12h14','new-sticky':'M4 3h11l5 5v12H4z M15 3v5h5 M8 13h8 M12 9v8',type:'M4 5h16 M12 5v15 M8 20h8',bold:'M6 3h7a5 5 0 0 1 0 10H6 M6 3v18h8a4 4 0 0 0 0-8H6',expand:'M8 3H3v5 M3 3l6 6 M16 21h5v-5 M21 21l-6-6',collapse:'M3 9h6V3 M9 9 3 3 M21 15h-6v6 M15 15l6 6',clock:'M12 8v4l3 2 M3 12a9 9 0 1 0 2.6-6.4 M3 4v5h5',down:'m6 9 6 6 6-6',up:'m6 15 6-6 6 6',archive:'M4 8h16v12H4z M3 4h18v4H3z M9 12h6',trash:'M3 6h18 M9 6V3h6v3 M6 6l1 15h10l1-15 M10 10v7 M14 10v7',bolt:'m13 2-9 12h7l-1 8 10-13h-7z',close:'m6 6 12 12 M6 18 18 6',back:'m12 5-7 7 7 7 M5 12h15',note:'M6 3h10l4 4v14H4V3z M8 9h8 M8 13h7 M8 17h4',grip:'M8 5h.01 M16 5h.01 M8 12h.01 M16 12h.01 M8 19h.01 M16 19h.01',reply:'M21 11a8 8 0 0 1-8 8H7l-5 3 1-7a8 8 0 1 1 18-4',pause:'M8 5v14 M16 5v14',check:'m5 12 4 4L19 6'};
-    Object.assign(zh,{palette:'便签样式',paletteClassic:'经典米白',paletteMorandi:'莫兰迪',paletteBold:'大胆活泼'});
-    Object.assign(en,{palette:'Sticky style',paletteClassic:'Classic',paletteMorandi:'Morandi',paletteBold:'Bold & playful'});
+    Object.assign(zh,{palette:'便签样式',paletteClassic:'经典米白',paletteMorandi:'莫兰迪',paletteBold:'大胆活泼',addNote:'添加笔记',deleteEmpty:'删除空白行',liveNeedsRestart:'请先重启 DeepSeek Harness，才能开启新版自动处理。',liveTitle:'开启自动处理？',liveConfirm:'当前和新增的笔记会自动处理，直到你关闭开关。等待中的笔记可随时调整顺序。',liveSnapshot:'按加入队列时的内容处理。',liveRisk:'Auto Act 可能修改文件。',liveEnable:'开启自动处理'});
+    Object.assign(en,{palette:'Sticky style',paletteClassic:'Classic',paletteMorandi:'Morandi',paletteBold:'Bold & playful',addNote:'Add note',deleteEmpty:'Delete empty line',liveNeedsRestart:'Restart DeepSeek Harness before enabling the updated auto-run.',liveTitle:'Turn on auto run?',liveConfirm:'Current and new notes run until you turn this off. Reorder waiting notes anytime.',liveSnapshot:'Notes use the text queued.',liveRisk:'Auto Act may change files.',liveEnable:'Turn on auto run'});
     paths.palette='M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3c-.9-1-.2-2.7 1.2-2.7H18a3 3 0 0 0 3-3c0-5-4-9-9-9z M7.5 11h.01 M10 7.5h.01 M14 7.5h.01 M17 11h.01';
     function Icon({name}) {
       const boardPaths={
@@ -150,6 +150,16 @@ window.__ModuleLoader__.load({
 .dsh-sticky-root .st-new-sticky .st-new-sticky-label{display:none}
 .dsh-sticky-root .st-expand-mark{position:absolute;right:0;bottom:0;display:flex;color:var(--st-ink);background:var(--st-paper);border-radius:4px}
 .dsh-sticky-root .st-expand-mark svg{width:20px;height:20px}
+.dsh-sticky-root .st-add-note{justify-content:flex-start;color:var(--st-dim);font-size:11px;padding:5px 2px;min-height:27px}
+.dsh-sticky-root .st-draft-row .st-rich-editor{flex:1;min-width:0;padding-right:24px}
+.dsh-sticky-root .st-auto-dialog{width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;pointer-events:auto;box-sizing:border-box;padding:20px 22px;border:0;border-radius:12px;background:var(--dsw-alias-bg-overlay);color:var(--dsw-alias-label-primary);box-shadow:0 4px 8px rgb(0 0 0 / .2);font:400 14px/1.5 system-ui,sans-serif}
+.dsh-sticky-root .st-auto-dialog::backdrop{background:rgb(0 0 0 / .28)}
+.dsh-sticky-root .st-auto-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.dsh-sticky-root .st-auto-dialog h2{margin:0;font-size:16px;font-weight:600;line-height:1.35}
+.dsh-sticky-root .st-auto-dialog p{margin:0 0 10px;font-size:14px;font-weight:400;line-height:1.5}
+.dsh-sticky-root .st-auto-dialog .st-auto-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.dsh-sticky-root .st-auto-dialog .st-auto-dialog-actions button{min-height:34px;padding:7px 12px;font-size:13px;font-weight:500;border-radius:6px}
+.dsh-sticky-root .st-auto-dialog .st-auto-dialog-actions .st-confirm-auto{background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-layer-1)}
 .dsh-sticky-root .st-collapsed{position:relative;pointer-events:auto}
 .dsh-sticky-root .st-hover-preview{display:none;position:absolute;top:100%;left:0;width:min(280px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 160px));overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding:10px 12px;background:rgb(from var(--st-paper) r g b / 1);color:var(--st-ink);border-radius:8px;box-shadow:0 2px 8px color-mix(in srgb,var(--st-ink) 20%,transparent)}
 .dsh-sticky-root .st-collapsed:hover .st-hover-preview,.dsh-sticky-root .st-collapsed:focus-within .st-hover-preview{display:block}
@@ -275,12 +285,15 @@ function stickyEditorPolicy({reason='input',editorActive=false,composing=false,s
     commitNative: !composing || reason==='blur',
   };
 }
+function stickyCanRemoveEmptyDraft(text,event,composing,hasHandler){
+  return !!hasHandler&&!composing&&!event.isComposing&&event.keyCode!==229&&!text&&!event.altKey&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&(event.key==='Backspace'||event.inputType==='deleteContentBackward');
+}
 // PURE HELPERS END
 
-function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,editorRef,placeholder,ariaLabel}) {
+function RichEditor({note,onChange,onFocus,onBlur,onEnter,onEmptyBackspace,onMoveKey,onSelection,editorRef,placeholder,ariaLabel}) {
   const element=useRef(null), composing=useRef(false), pendingSelection=useRef(null), ownedSelection=useRef(false), blurred=useRef(false);
   const value=useRef({text:note.text||'',marks:stickyNormalizeMarks(note.text||'',note.marks)});
-  const callbacks=useRef({}); callbacks.current={onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,note};
+  const callbacks=useRef({}); callbacks.current={onChange,onFocus,onBlur,onEnter,onEmptyBackspace,onMoveKey,onSelection,note};
   const history=useRef({undo:[],redo:[]}), nativeEdit=useRef(null), renderStamp=useRef('');
   const colors={default:'var(--dsw-alias-label-primary)',accent:'var(--dsw-alias-brand-primary)',success:'var(--dsw-alias-state-success-primary)',warn:'var(--dsw-alias-state-warn-primary)',error:'var(--dsw-alias-state-error-primary)'};
   function editorPolicy(reason='input') {
@@ -417,6 +430,7 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,
     const beforeInput=e=>{
       if(composing.current||e.isComposing)return;
       if(e.inputType==='historyUndo'||e.inputType==='historyRedo'){e.preventDefault();undo(e.inputType==='historyRedo');return;}
+      if(stickyCanRemoveEmptyDraft(value.current.text,e,composing.current,callbacks.current.onEmptyBackspace)){e.preventDefault();callbacks.current.onEmptyBackspace();return;}
       if(e.inputType==='insertParagraph'){e.preventDefault();callbacks.current.onEnter?.();return;}
       if(e.inputType==='insertLineBreak'){e.preventDefault();insertText('\n');return;}
       if(e.inputType?.startsWith('format')){e.preventDefault();return;}
@@ -453,6 +467,7 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,
     onDragOver:e=>e.preventDefault(),onDrop:e=>{e.preventDefault();},
     onKeyDown:e=>{
       if(e.nativeEvent.isComposing||composing.current||e.keyCode===229)return;
+      if(stickyCanRemoveEmptyDraft(value.current.text,e,composing.current,callbacks.current.onEmptyBackspace)){e.preventDefault();callbacks.current.onEmptyBackspace();return;}
       if(e.altKey&&['ArrowUp','ArrowDown'].includes(e.key)){callbacks.current.onMoveKey?.(e);return;}
       if((e.metaKey||e.ctrlKey)&&!e.altKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo(e.shiftKey);return;}
       if(e.ctrlKey&&!e.metaKey&&e.key.toLowerCase()==='y'){e.preventDefault();undo(true);return;}
@@ -466,13 +481,23 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,
       ctx.effect(()=>{window.addEventListener('resize',measureAll);window.addEventListener('pointerup',measureAll);document.addEventListener('transitionend',measureAll);return()=>{window.removeEventListener('resize',measureAll);window.removeEventListener('pointerup',measureAll);document.removeEventListener('transitionend',measureAll);if(measureFrame)cancelAnimationFrame(measureFrame);};});
       function useLanguage(){useSyncExternalStore(f=>ctx.locale.subscribe(f),()=>ctx.locale.getLocale());return tr;}
       async function transport(sessionId,request){
-        if(request.action==='create'){const {id,cardId,text,style,fontSize,color,checked,marks}=request;request={action:'create',id,...(cardId?{cardId}:{}),text,style,fontSize,color,checked,...(marks?{marks}:{})};}
-        if(request.action==='queue'){
+        const original=request;
+        if(request.action==='queue'&&request.liveCardId){
+          const probe=await ctx.remote.commands.execute(sessionId,'/stickies '+JSON.stringify({action:'liveCapabilities'}),[]);
+          let capabilities;try{capabilities=JSON.parse(probe?.value?.result?.text||'{}');}catch{}
+          if(!probe?.ok||capabilities?.liveQueue!==1)throw new Error(tr('liveNeedsRestart'));
+        }
+        if(request.action==='create'){const {id,cardId,text,style,fontSize,color,checked,marks}=request;request={action:'liveCreate',note:{id,...(cardId?{cardId}:{}),text,style,fontSize,color,checked,...(marks?{marks}:{})}};}
+        if(request.action==='reorder'&&request.cardId)request={...request,action:'liveReorder'};
+        if(['queue','liveCreate','liveReorder'].includes(request.action)){
           const receipt=await ctx.remote.commands.execute(sessionId,'/stickies '+JSON.stringify(request),[]);
           if(!receipt.ok)throw new Error(receipt.error?.message||tr('offline'));
           const value=receipt.value?.result;if(!value?.text)throw new Error('Empty Stickies receipt');
-          const accepted=JSON.parse(value.text);if(!accepted.ok)throw new Error(accepted.error?.message||'Queue refused');
-          request={action:'list'};
+          const accepted=JSON.parse(value.text);
+          if(!accepted.ok){
+            if(accepted.error?.code==='COMMAND_ACTION'&&['liveCreate','liveReorder'].includes(request.action)){const {id,cardId,text,style,fontSize,color,checked,marks}=original;request=original.action==='create'?{action:'create',id,...(cardId?{cardId}:{}),text,style,fontSize,color,checked,...(marks?{marks}:{})}:original;}
+            else throw new Error(accepted.error?.message||'Queue refused');
+          }else request={action:'list'};
         }
         const response=await ctx.remote.stickies.request(sessionId,request);
         if(!response.ok)throw new Error(response.error?.message||tr('offline'));
@@ -502,7 +527,7 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onMoveKey,onSelection,
       // The installed composer dock sits directly below its card with 4px top padding.
       // Its out-of-flow, flex-start marker cancels that padding without changing layout.
       function ComposerBottom(props){const input=props.useInput(s=>s);useLayoutEffect(()=>{measureAll();},[input]);return h(Dock,{...props,kind:'composer-bottom'});}
-      function Dialog({title,onClose,children}){const ref=useRef(null);useEffect(()=>{const el=ref.current;el.showModal();return()=>{el.close();};},[]);return h('dialog',{ref,className:'st-dialog',onCancel:e=>{e.preventDefault();onClose();},onClick:e=>{if(e.target===e.currentTarget){const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)onClose();}}},h('header',null,h('h2',null,title),h(Button,{label:tr('close'),icon:'close',onClick:onClose})),children);}
+      function Dialog({title,onClose,children,className=''}){const ref=useRef(null);useEffect(()=>{const el=ref.current;el.showModal();return()=>{el.close();};},[]);return h('dialog',{ref,className:'st-dialog '+className,'aria-label':title,onCancel:e=>{e.preventDefault();onClose();},onClick:e=>{if(e.target===e.currentTarget){const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)onClose();}}},h('header',null,h('h2',null,title),h(Button,{label:tr('close'),icon:'close',onClick:onClose})),children);}
       function NoteRow({note,index,store,onFocus,onEnter,onDelete,onResult,onMove,onSelection,drag,setDrag,drop,setDrop}){
         const hold=useRef(null),origin=useRef(null);useEffect(()=>()=>clearTimeout(hold.current),[]);
         const colors={default:'var(--dsw-alias-label-primary)',accent:'var(--dsw-alias-brand-primary)',success:'var(--dsw-alias-state-success-primary)',warn:'var(--dsw-alias-state-warn-primary)',error:'var(--dsw-alias-state-error-primary)'};
@@ -571,7 +596,7 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
   const settingsKey='dsh-stickies-draft-settings:'+sessionId+':'+card.id;
   const [formatOpen,setFormatOpen]=useState(false),[focused,setFocused]=useState(null),[settings,setSettings]=useState(()=>{const v=stickyReadLocal(settingsKey,{}),migrationKey=settingsKey+':bullet-default-v1';const migrated=stickyReadLocal(migrationKey,false);if(!migrated){if(v.style==='checkbox')v.style='bullet';stickyWriteLocal(migrationKey,true);}return {style:['text','checkbox','bullet','numbered'].includes(v?.style)?v.style:'bullet',fontSize:Number.isInteger(v?.fontSize)&&v.fontSize>=10&&v.fontSize<=32?v.fontSize:12,color:['default','accent','success','warn','error'].includes(v?.color)?v.color:'default'};});
   useEffect(()=>stickyWriteLocal(settingsKey,settings),[settingsKey,settings]);
-  const [runOpen,setRunOpen]=useState(false),[runAnchor,setRunAnchor]=useState(null),[runMode,setRunMode]=useState('execute'),[busy,setBusy]=useState(false);
+  const [runOpen,setRunOpen]=useState(false),[runAnchor,setRunAnchor]=useState(null),[runMode,setRunMode]=useState('execute'),[busy,setBusy]=useState(false),[confirmAuto,setConfirmAuto]=useState(false);
   const [drag,setDrag]=useState(null),[drop,setDrop]=useState(null),[footerPinned,setFooterPinned]=useState(false),[deleting,setDeleting]=useState(false);
   useLayoutEffect(()=>{
     const node=rootRef.current,scroll=node?.parentElement;if(!scroll?.classList.contains('st-board-scroll'))return;
@@ -583,6 +608,10 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
   const suffix=sessionId+(card.id==='default'?'':':'+card.id),draftKey='dsh-stickies-draft:'+suffix,marksKey='dsh-stickies-draft-marks:'+suffix;
   const [draft,setDraft]=useState(()=>{try{return localStorage.getItem(draftKey)||'';}catch{return '';}}),draftValue=useRef(draft);
   const [marks,setMarks]=useState(()=>stickyReadLocal(marksKey,[])),marksValue=useRef(marks);
+  const [draftVisible,setDraftVisible]=useState(true),focusDraftOnShow=useRef(false);
+  useLayoutEffect(()=>{if(draftVisible&&focusDraftOnShow.current){focusDraftOnShow.current=false;draftRef.current?.focus();}},[draftVisible]);
+  const showDraft=()=>{if(draftVisible)draftRef.current?.focus();else{focusDraftOnShow.current=true;setDraftVisible(true);}};
+  const removeEmptyDraft=()=>{if(draftValue.current)return;onSelection(null);setDraftVisible(false);const editors=rootRef.current?.querySelectorAll('[data-note-id] [contenteditable]');editors?.[editors.length-1]?.focus();};
   const deleteCard=async()=>{
     if(deleting)return;setDeleting(true);onSelection(null);setRunOpen(false);
     try{await store.flushAll();await store.run({action:'deleteCard',id:card.id});for(const key of [draftKey,marksKey,settingsKey,settingsKey+':bullet-default-v1']){try{localStorage.removeItem(key);}catch{}}onSize(card.id,null);}
@@ -602,7 +631,7 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
     const origin=document.activeElement;await store.flush(id);
     if(document.activeElement!==origin||!rootRef.current?.contains(origin))return;
     const index=active.findIndex(n=>n.id===id),next=active[index+1];
-    if(next)rootRef.current.querySelector(`[data-note-id="${next.id}"] [contenteditable]`)?.focus();else draftRef.current?.focus();
+    if(next)rootRef.current.querySelector(`[data-note-id="${next.id}"] [contenteditable]`)?.focus();else showDraft();
   };
   const move=async(id,delta)=>{const ids=active.map(n=>n.id),index=ids.indexOf(id),target=index+delta;if(index<0||target<0||target>=ids.length)return;[ids[index],ids[target]]=[ids[target],ids[index]];await store.run({action:'reorder',cardId:card.id,ids});};
   useEffect(()=>{
@@ -648,31 +677,41 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
   const queueItems=state.queue?.items?.filter(i=>cardNoteIds.has(i.noteId))||[];
   const queueActive=queueItems.some(i=>['pending','running','dispatching'].includes(i.status));
   const queueBlocked=['armed','running'].includes(state.queue?.status)||state.queue?.items?.some(i=>['pending','running','dispatching'].includes(i.status));
-  const switchOn=queueActive&&state.queue?.status!=='paused';
-  const toggleAuto=async()=>{
-    if(busy)return;setBusy(true);setRunOpen(false);
+  const switchOn=(state.queue?.liveCardId===card.id&&['armed','running'].includes(state.queue?.status))||(queueActive&&state.queue?.status!=='paused');
+  const toggleAuto=async(confirmed=false)=>{
+    if(busy)return;
+    // A toggle is not a request for a fresh empty note. Preserve any unsaved text.
+    if(!draftValue.current)setDraftVisible(false);
+    if(confirmed&&switchOn)return;
+    if(!switchOn&&!confirmed&&stickyReadLocal('dsh-stickies-auto-confirmed-v1',false)!==true){setConfirmAuto(true);return;}
+    setConfirmAuto(false);setBusy(true);setRunOpen(false);
     try{
       if(switchOn){
         await store.run({action:'pause'});
         for(const item of store.get().queue.items.filter(i=>cardNoteIds.has(i.noteId)&&i.status==='pending'))await store.run({action:'cancelItem',id:item.id});
       }else{
-        await commitDraft();await store.flushAll();
+        await commitDraft();if(!draftValue.current)setDraftVisible(false);await store.flushAll();
         const notes=store.get().notes.filter(n=>(n.cardId||'default')===card.id&&!n.archivedAt&&!n.checked&&n.text.trim());
-        if(!notes.length||notes.length>100)return;
-        await store.run({action:'queue',replacePending:false,items:notes.map(n=>({id:n.id,mode:runMode}))});
+        if(notes.length>100)return;
+        await store.run({action:'queue',replacePending:false,liveCardId:card.id,liveMode:runMode,items:notes.map(n=>({id:n.id,mode:runMode}))});
+        if(confirmed)stickyWriteLocal('dsh-stickies-auto-confirmed-v1',true);
       }
     }finally{setBusy(false);}
   };
-  const runPopover=runOpen&&runAnchor&&h('div',{ref:runPopoverRef,className:'st-mode-menu',role:'menu','aria-label':'Auto mode',style:{left:runAnchor.left,bottom:runAnchor.bottom}},...['execute','answer'].map(mode=>h(Button,{key:mode,role:'menuitemradio','aria-checked':runMode===mode,label:mode==='execute'?'Auto execute':'Answer only',onClick:()=>{setRunMode(mode);setRunOpen(false);}},mode==='execute'?'Auto execute':'Answer only')));
+  const runPopover=runOpen&&runAnchor&&h('div',{ref:runPopoverRef,className:'st-mode-menu',role:'menu','aria-label':'Auto mode',style:{left:runAnchor.left,bottom:runAnchor.bottom}},...['execute','answer'].map(mode=>h(Button,{key:mode,role:'menuitemradio','aria-checked':runMode===mode,label:mode==='execute'?'Auto Act':'Answer only',onClick:()=>{setRunMode(mode);setRunOpen(false);}},mode==='execute'?'Auto Act':'Answer only')));
   return h(React.Fragment,null,
     h('section',{ref:rootRef,className:'st-panel st-card',inert:deleting?true:undefined,'aria-busy':deleting,'data-card-id':card.id,'data-style':palette,'data-palette':cardIndex%6,'data-footer-pinned':footerPinned,'data-sized':manualHeight!==undefined,style:{width,height:manualHeight,minHeight:manualHeight===undefined?width:formatOpen?174:112,maxHeight:'none'},'aria-label':card.title},
       h(StickyTitle,{card,store,count,onDeleteCard:deleteCard,deleting}),toolbar,
       h('div',{className:'st-scroll st-card-body'},...active.map((note,index)=>h(NoteRow,{key:note.id,note,index,store,onFocus:setFocused,onEnter:id=>focusNext(id).catch(()=>{}),onMove:(id,delta)=>move(id,delta).catch(()=>{}),onSelection,drag,setDrag,drop,setDrop})),
-        h('div',{className:'st-row','data-style':settings.style},settings.style==='checkbox'?h('span',{className:'st-mark st-draft-check','aria-hidden':true}):h('span',{className:'st-mark','aria-hidden':true},settings.style==='bullet'?'✿':settings.style==='numbered'?`${active.length+1}.`:''),h(RichEditor,{editorRef:draftRef,note:{id:draftId,text:draft,marks,...settings},placeholder:count?'':t('empty'),ariaLabel:card.title+' '+t('empty'),onFocus:()=>setFocused(null),onChange:saveDraft,onBlur:e=>{if(e.relatedTarget?.closest?.('.st-selection-tools'))return;commitDraft().catch(()=>{});},onEnter:()=>commitDraft(true).catch(()=>{}),onSelection:value=>onSelection(prev=>value||(toolsRef.current?.contains(document.activeElement)?prev:prev?.noteId===draftId?null:prev))}))),
+        draftVisible?h('div',{className:'st-row st-draft-row','data-style':settings.style},settings.style==='checkbox'?h('span',{className:'st-mark st-draft-check','aria-hidden':true}):h('span',{className:'st-mark','aria-hidden':true},settings.style==='bullet'?'✿':settings.style==='numbered'?`${active.length+1}.`:''),h(RichEditor,{editorRef:draftRef,note:{id:draftId,text:draft,marks,...settings},placeholder:count?'':t('empty'),ariaLabel:card.title+' '+t('empty'),onFocus:()=>setFocused(null),onChange:saveDraft,onBlur:e=>{if(e.relatedTarget?.closest?.('.st-selection-tools'))return;commitDraft().catch(()=>{});},onEnter:()=>commitDraft(true).catch(()=>{}),onEmptyBackspace:removeEmptyDraft,onSelection:value=>onSelection(prev=>value||(toolsRef.current?.contains(document.activeElement)?prev:prev?.noteId===draftId?null:prev))}),!draft&&h(Button,{className:'st-row-delete',label:t('deleteEmpty'),icon:'trash',onMouseDown:e=>e.preventDefault(),onClick:removeEmptyDraft})):h(Button,{className:'st-add-note',label:t('addNote'),icon:'plus',onClick:showDraft},t('addNote'))),
       h('footer',{className:'st-footer st-footer-minimal'},
-        h('div',{className:'st-footer-controls'},h('div',{className:'st-auto-controls'},h(Button,{className:'st-auto-switch',role:'switch','aria-checked':switchOn,label:switchOn?'Turn off and cancel pending follow-ups; running work continues':'Authorize current notes only; starts after the current turn, or immediately if idle',disabled:busy||(!switchOn&&(queueBlocked||(!active.some(n=>!n.checked&&n.text.trim())&&!draft.trim())||active.filter(n=>!n.checked&&n.text.trim()).length>100)),onClick:toggleAuto},h('span',{'aria-hidden':true})),
-          h('div',{ref:runButtonRef,className:'st-mode-anchor'},h(Button,{className:'st-auto-run',label:runMode==='execute'?'Auto execute':'Answer only','aria-haspopup':'menu','aria-expanded':runOpen,disabled:busy||switchOn,onClick:()=>{const r=runButtonRef.current?.getBoundingClientRect();if(r)setRunAnchor({left:Math.max(8,Math.min(r.left,window.innerWidth-160)),bottom:window.innerHeight-r.top+4});setRunOpen(v=>!v);}},runMode==='execute'?'Auto execute':'Answer only',h(Icon,{name:'down'})))),
-        h(Button,{className:'st-format-toggle',label:t('format'),icon:'type','aria-expanded':formatOpen,onClick:()=>setFormatOpen(v=>!v)}))),...handles),runPopover);
+        h('div',{className:'st-footer-controls'},h('div',{className:'st-auto-controls'},h(Button,{className:'st-auto-switch',role:'switch','aria-checked':switchOn,label:switchOn?'Turn off and cancel pending follow-ups; running work continues':'Authorize current and newly committed notes on this sticky until switched off; follows the visible order',disabled:busy||(!switchOn&&(state.loading||queueBlocked||active.filter(n=>!n.checked&&n.text.trim()).length>100)),onClick:()=>toggleAuto()},h('span',{'aria-hidden':true})),
+          h('div',{ref:runButtonRef,className:'st-mode-anchor'},h(Button,{className:'st-auto-run',label:runMode==='execute'?'Auto Act':'Answer only','aria-haspopup':'menu','aria-expanded':runOpen,disabled:busy||switchOn,onClick:()=>{const r=runButtonRef.current?.getBoundingClientRect();if(r)setRunAnchor({left:Math.max(8,Math.min(r.left,window.innerWidth-160)),bottom:window.innerHeight-r.top+4});setRunOpen(v=>!v);}},runMode==='execute'?'Auto Act':'Answer only',h(Icon,{name:'down'})))),
+        h(Button,{className:'st-format-toggle',label:t('format'),icon:'type','aria-expanded':formatOpen,onClick:()=>setFormatOpen(v=>!v)}))),...handles),runPopover,
+    confirmAuto&&h(Dialog,{title:t('liveTitle'),className:'st-auto-dialog',onClose:()=>setConfirmAuto(false)},
+      h('p',null,t('liveConfirm')),
+      h('p',null,t('liveSnapshot'),' ',t('liveRisk')),
+      h('div',{className:'st-auto-dialog-actions'},h(Button,{label:t('cancel'),autoFocus:true,onClick:()=>setConfirmAuto(false)},t('cancel')),h(Button,{className:'st-confirm-auto',label:t('liveEnable'),disabled:busy||queueBlocked,onClick:()=>toggleAuto(true)},t('liveEnable')))));
 }
 
 function Widget({sessionId,geometry}){

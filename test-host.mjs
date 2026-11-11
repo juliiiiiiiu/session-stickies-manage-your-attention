@@ -260,7 +260,7 @@ test('Remote agent lookup matches the installed canonical strict wire definition
   assert.equal(parameter.lookup, 'agent');
   assert.equal(parameter.codec.mode, 'strict');
   assert.equal(matches(parameter), true);
-  assert.equal(matches({ ...parameter, codec: { ...parameter.codec, typeSymbol: '@local/dsh-stickies#SessionId' } }), false);
+  assert.equal(matches({ ...parameter, codec: { ...parameter.codec, typeSymbol: 'dsh-julies-session-stickies#SessionId' } }), false);
   assert.deepEqual(parameter.codec.jsonSchema, { type: 'string' });
   assert.equal(parameter.codec.create().parse('session-example'), 'session-example');
   assert.throws(() => parameter.codec.create().parse(123));
@@ -463,5 +463,122 @@ test('installable apply registers only user command authorization and scoped-ses
   const denied = await ctx.stickies.request(a, { action: 'queue', items: [{ id, mode: 'answer' }] }); assert.equal(denied.error.code, 'USER_ONLY');
   assert.equal(commands[0].recordInput, false); assert.equal(tools.length, 1); assert.ok(events.has('session/event'));
   const invalid = await commands[0].handler({ agent: a, rawInput: 'invalid' }); assert.equal(invalid.kind, 'error');
+  const live = await commands[0].handler({ agent: a, rawInput: JSON.stringify({ action: 'liveCreate', note: { text: 'private live' } }) });
+  assert.equal(live.kind, 'success'); assert.ok(!live.text.includes('private live'));
+  assert.equal((await ctx.stickies.request(a, { action: 'liveCreate', note: { text: 'denied' } })).error.code, 'USER_ONLY');
+  assert.equal((await commands[0].handler({ agent: a, rawInput: JSON.stringify({ action: 'create', text: 'no' }) })).kind, 'error');
   await Promise.all(cleanup.map(fn => fn()));
+});
+
+test('notes added and reordered during an open turn dispatch in the latest pending order', async () => {
+  const f = fixture(), a = f.agent('live-boundary'); a.session.open = 1;
+  const first = await add(f.host, a, 'original');
+  await f.host.request(a, { action: 'queue', items: [{ id: first, mode: 'execute' }], liveCardId: 'default', liveMode: 'execute' }, true);
+  await f.host.request(a, { action: 'liveCreate', note: { id: CARD_ONE, text: 'added first' } }, true);
+  await f.host.request(a, { action: 'liveCreate', note: { id: CARD_TWO, text: 'added second' } }, true);
+  await f.host.request(a, { action: 'liveReorder', cardId: 'default', ids: [CARD_TWO, CARD_ONE, first] }, true);
+  assert.equal(a.sent.length, 0);
+  a.session.open = null; await f.host.observe(a, 'turn/end', { turn: 1, reason: { kind: 'completed' } });
+  assert.ok(a.sent[0].content[0].text.endsWith('added second'));
+  await finish(f.host, a, a.sent[0], 2); assert.ok(a.sent[1].content[0].text.endsWith('added first'));
+  await finish(f.host, a, a.sent[1], 3); assert.ok(a.sent[2].content[0].text.endsWith('original'));
+});
+
+test('live queue waits when empty and only explicit human creates append immutable snapshots', async () => {
+  const f = fixture(), a = f.agent('live'), tool = toolDefinition(f.host);
+  const r = await f.host.request(a, { action: 'queue', items: [], liveCardId: 'default', liveMode: 'execute' }, true);
+  assert.equal(r.state.queue.status, 'armed'); assert.equal(a.sent.length, 0);
+  await tool.execute({ action: 'create', text: 'agent' }, { agent: a });
+  await f.host.request(a, { action: 'create', text: 'remote' });
+  const blank = await f.host.request(a, { action: 'liveCreate', note: { text: '' } }, true);
+  await f.host.request(a, { action: 'update', id: blank.state.notes.at(-1).id, patch: { text: 'edited later' } });
+  assert.equal(f.host.state(a.id).queue.items.length, 0);
+  const created = await f.host.request(a, { action: 'liveCreate', note: { id: CARD_ONE, text: 'snapshot' } }, true);
+  assert.equal(created.state.queue.items[0].mode, 'execute'); assert.equal(a.sent.length, 1);
+  await f.host.request(a, { action: 'update', id: CARD_ONE, patch: { text: 'changed' } });
+  assert.ok(a.sent[0].content[0].text.endsWith('snapshot'));
+  await f.host.request(a, { action: 'liveCreate', note: { id: CARD_ONE, text: 'duplicate' } }, true);
+  assert.equal(f.host.state(a.id).queue.items.length, 1);
+  await finish(f.host, a, a.sent[0], 1);
+  assert.equal(f.host.state(a.id).queue.status, 'armed'); assert.equal(f.host.state(a.id).notes.find(n => n.id === CARD_ONE).lastResult.stale, true);
+  await f.host.request(a, { action: 'liveCreate', note: { text: 'next' } }, true);
+  assert.equal(a.sent.length, 2); assert.ok(a.sent[1].content[0].text.endsWith('next'));
+});
+
+test('live reorder modifies only pending snapshots, never redispatches in-flight or trusts agent reorder', async () => {
+  const f = fixture(), a = f.agent('live-order');
+  const ids = [await add(f.host, a, 'one'), await add(f.host, a, 'two'), await add(f.host, a, 'three')];
+  await f.host.request(a, { action: 'queue', items: ids.map(id => ({ id, mode: 'answer' })), liveCardId: 'default', liveMode: 'execute' }, true);
+  const before = structuredClone(f.host.state(a.id).queue.items[0]);
+  await f.host.request(a, { action: 'reorder', cardId: 'default', ids: [ids[2], ids[1], ids[0]] });
+  assert.deepEqual(f.host.state(a.id).queue.items.map(i => i.noteId), ids);
+  const reordered = await f.host.request(a, { action: 'liveReorder', cardId: 'default', ids: [ids[2], ids[1], ids[0]] }, true);
+  assert.deepEqual(reordered.state.queue.items.map(i => i.noteId), [ids[0], ids[2], ids[1]]);
+  assert.deepEqual(reordered.state.queue.items[0], before);
+  await finish(f.host, a, a.sent[0], 1);
+  assert.equal(a.sent.length, 2); assert.ok(a.sent[1].content[0].text.endsWith('three'));
+  const saved = structuredClone(f.host.state(a.id));
+  assert.equal((await f.host.request(a, { action: 'liveReorder', cardId: 'default', ids: [ids[1]] }, true)).error.code, 'INVALID_ORDER');
+  assert.deepEqual(f.host.state(a.id), saved);
+});
+
+test('live commands cannot be called by tools or remote; pause and restart disarm admission', async () => {
+  const f = fixture(), a = f.agent('live-safety'), tool = toolDefinition(f.host);
+  for (const action of ['queue', 'liveCreate', 'liveReorder']) {
+    assert.ok(!tool.parameters.properties.action.enum.includes(action));
+    assert.equal((await tool.execute({ action, note: { text: 'bad' }, user: true }, { agent: a })).error.code, 'USER_ONLY');
+    assert.equal((await f.host.request(a, { action, note: { text: 'bad' } })).error.code, 'USER_ONLY');
+  }
+  await f.host.request(a, { action: 'queue', items: [], liveCardId: 'default', liveMode: 'answer' }, true);
+  const g = fixture(f.saved), b = g.agent(a.id);
+  assert.equal(g.host.state(b.id).queue.status, 'paused');
+  await g.host.request(b, { action: 'liveCreate', note: { text: 'after restart' } }, true);
+  assert.equal(g.host.state(b.id).queue.items.length, 0); assert.equal(b.sent.length, 0);
+  await f.host.request(a, { action: 'pause' });
+  await f.host.request(a, { action: 'liveCreate', note: { text: 'paused' } }, true);
+  assert.equal(f.host.state(a.id).queue.items.length, 0); assert.equal(a.sent.length, 0);
+});
+
+test('live cancellation, serialized pause and restart never silently reauthorize', async () => {
+  const f = fixture(), a = f.agent('live-race'); a.session.open = 1;
+  await f.host.request(a, { action: 'queue', items: [], liveCardId: 'default', liveMode: 'answer' }, true);
+  const created = await f.host.request(a, { action: 'liveCreate', note: { text: 'pending' } }, true);
+  await f.host.request(a, { action: 'cancelItem', id: created.state.queue.items[0].id });
+  assert.equal(f.host.state(a.id).queue.status, 'armed');
+  const [pause, next] = await Promise.all([
+    f.host.request(a, { action: 'pause' }),
+    f.host.request(a, { action: 'liveCreate', note: { text: 'after pause' } }, true)
+  ]);
+  assert.equal(pause.ok, true); assert.equal(next.ok, true);
+  assert.equal(next.state.queue.status, 'paused'); assert.equal(next.state.queue.items.length, 1);
+  a.session.open = null;
+  await f.host.observe(a, 'turn/end', { turn: 1, reason: { kind: 'completed' } });
+  assert.equal(a.sent.length, 0);
+  const restored = fixture(f.saved); assert.equal(restored.host.state(a.id).queue.status, 'paused');
+});
+
+test('live validation, card isolation, queue capacity and persistence are atomic', async () => {
+  const f = fixture(), a = f.agent('live-validation');
+  await f.host.request(a, { action: 'createCard', id: CARD_ONE });
+  for (const req of [
+    { action: 'queue', items: [], liveCardId: 'missing', liveMode: 'answer' },
+    { action: 'queue', items: [], liveCardId: 'default', liveMode: 'bad' },
+    { action: 'queue', items: [], liveCardId: 'default' },
+    { action: 'queue', items: [] }
+  ]) assert.equal((await f.host.request(a, req, true)).ok, false);
+  const other = (await f.host.request(a, { action: 'create', cardId: CARD_ONE, text: 'other' })).state.notes[0].id;
+  assert.equal((await f.host.request(a, { action: 'queue', items: [{ id: other, mode: 'answer' }], liveCardId: 'default', liveMode: 'answer' }, true)).error.code, 'INVALID_NOTE');
+  await f.host.request(a, { action: 'queue', items: [], liveCardId: 'default', liveMode: 'answer' }, true);
+  await f.host.request(a, { action: 'liveCreate', note: { cardId: CARD_ONE, text: 'other card' } }, true);
+  assert.equal(f.host.state(a.id).queue.items.length, 0);
+  a.session.open = 1;
+  await Promise.all(Array.from({ length: 100 }, (_, i) => f.host.request(a, { action: 'liveCreate', note: { text: `note ${i}` } }, true)));
+  const before = structuredClone(f.host.state(a.id));
+  assert.equal(before.queue.items.length, 100);
+  assert.equal((await f.host.request(a, { action: 'liveCreate', note: { text: 'overflow' } }, true)).error.code, 'LIMIT');
+  assert.deepEqual(f.host.state(a.id), before);
+  assert.equal(fixture(f.saved).host.state(a.id).queue.status, 'paused');
+  const put = f.unit.putRecord; f.unit.putRecord = async () => { throw new Error('disk full'); };
+  assert.equal((await f.host.request(a, { action: 'liveReorder', cardId: 'default', ids: before.notes.filter(n => n.cardId === 'default').map(n => n.id).reverse() }, true)).ok, false);
+  assert.deepEqual(f.host.state(a.id), before); f.unit.putRecord = put;
 });

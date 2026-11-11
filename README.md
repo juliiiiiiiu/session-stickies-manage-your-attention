@@ -41,7 +41,7 @@ The plugin displays beside conversations. Its dog button collapses or expands th
 
 Cards and committed notes are stored by the DSH host per session. Drafts, local recovery journals and card sizes are stored in browser-local storage. Clearing browser data may remove those browser-local values. Back up important information before removing storage or changing profiles.
 
-Auto run uses a queue shared across the session. Execute mode uses the current session's permissions; Answer only uses a read-only tool allowlist. Pausing prevents subsequent queue items but does not stop an item already running. Review selected notes and permissions before authorizing them. On restart the plugin pauses uncertain work rather than replaying it automatically.
+Auto run uses a queue shared across the session. Turning it on authorizes current notes and new notes you commit on that sticky until you turn it off. You can reorder waiting notes; work already started cannot be reordered. The queue runs the text captured when each note was added, so later edits do not alter the queued task. Auto Act can change files using the current session's permissions; Answer only uses a read-only tool allowlist. Turning it off prevents pending work but does not stop an item already running. On restart, the plugin pauses rather than replaying uncertain work. Each authorization supports up to 100 items, including completed items; turn it off and on to start a fresh queue. The first-time explanation is remembered in browser-local storage.
 
 ## Development
 
