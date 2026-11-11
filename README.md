@@ -54,3 +54,7 @@ node --test test-*.mjs
 ```
 
 The automated tests cover storage, queue safety, rich-text behavior, sizing, contrast and layout policies. They do not replace interactive testing across browsers and window sizes. See [third-party icon notices](THIRD_PARTY_ICONS.md).
+
+## License
+
+This project is released under the [MIT License](LICENSE). List-format icons keep the notices in [THIRD_PARTY_ICONS.md](THIRD_PARTY_ICONS.md).
