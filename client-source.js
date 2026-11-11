@@ -43,6 +43,7 @@ window.__ModuleLoader__.load({
       return {left,top,narrow:available<156,width:available<156?170:Math.min(170,available),maxWidth:Math.max(100,viewport.width-left-12),maxHeight:Math.max(80,Math.min(300,viewport.height-top-12))};
     }
     function stickyIsCollapsed(preference,narrow){return preference??narrow;}
+    function stickyCollapsedPosition(geometry){return {left:Math.max(8,geometry.left-32),top:Math.max(48,geometry.top-60)};}
     function stickyColumnLeft(leadingLeft){
       // Installed ConversationHeader uses a 20px left inset in both blank and active states.
       return Math.max(16,leadingLeft-20+16);
@@ -149,6 +150,10 @@ window.__ModuleLoader__.load({
 .dsh-sticky-root .st-new-sticky .st-new-sticky-label{display:none}
 .dsh-sticky-root .st-expand-mark{position:absolute;right:0;bottom:0;display:flex;color:var(--st-ink);background:var(--st-paper);border-radius:4px}
 .dsh-sticky-root .st-expand-mark svg{width:20px;height:20px}
+.dsh-sticky-root .st-collapsed{position:relative;pointer-events:auto}
+.dsh-sticky-root .st-hover-preview{display:none;position:absolute;top:100%;left:0;width:min(280px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 160px));overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding:10px 12px;background:rgb(from var(--st-paper) r g b / 1);color:var(--st-ink);border-radius:8px;box-shadow:0 2px 8px color-mix(in srgb,var(--st-ink) 20%,transparent)}
+.dsh-sticky-root .st-collapsed:hover .st-hover-preview,.dsh-sticky-root .st-collapsed:focus-within .st-hover-preview{display:block}
+.dsh-sticky-root .st-hover-preview section+section{margin-top:10px}.dsh-sticky-root .st-hover-preview strong{display:block;margin-bottom:4px}.dsh-sticky-root .st-hover-preview p{margin:3px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}.dsh-sticky-root .st-hover-preview p[data-checked=true]{text-decoration:line-through;opacity:.7}
 @media(prefers-reduced-motion:no-preference){.st-panel{animation:st-appear .15s ease-out}@keyframes st-appear{from{opacity:.5;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}}
 `;
     return {inject:['slots','locale','remote'],async apply(ctx){

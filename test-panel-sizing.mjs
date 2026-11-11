@@ -3,11 +3,15 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('./client-source.js',import.meta.url),'utf8');
 const code=source.split('// PANEL GEOMETRY START')[1].split('\n').slice(1).join('\n').split('// PANEL GEOMETRY END')[0];
-const {stickyPanelRect,stickyResizeRect,stickyGutterGeometry,stickyIsCollapsed}=new Function(code+';return {stickyPanelRect,stickyResizeRect,stickyGutterGeometry,stickyIsCollapsed};')();
+const {stickyPanelRect,stickyResizeRect,stickyGutterGeometry,stickyIsCollapsed,stickyCollapsedPosition}=new Function(code+';return {stickyPanelRect,stickyResizeRect,stickyGutterGeometry,stickyIsCollapsed,stickyCollapsedPosition};')();
 const base={left:300,top:160,width:170,maxWidth:220,maxHeight:300};
 const viewport={width:1512,height:949};
 const bounds=stickyPanelRect(null,base,viewport);
 const start={left:300,top:160,width:170,height:190};
+test('collapsed mascot shifts up and left without leaving the viewport',()=>{
+ assert.deepEqual(stickyCollapsedPosition({left:300,top:160}),{left:268,top:100});
+ assert.deepEqual(stickyCollapsedPosition({left:16,top:48}),{left:8,top:48});
+});
 test('narrow gutters default to collapsed but explicit expansion wins',()=>{
  const g=stickyGutterGeometry(300,160,70,viewport);
  assert.equal(g.narrow,true);assert.equal(g.width,170);

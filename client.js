@@ -43,6 +43,7 @@ window.__ModuleLoader__.load({
       return {left,top,narrow:available<156,width:available<156?170:Math.min(170,available),maxWidth:Math.max(100,viewport.width-left-12),maxHeight:Math.max(80,Math.min(300,viewport.height-top-12))};
     }
     function stickyIsCollapsed(preference,narrow){return preference??narrow;}
+    function stickyCollapsedPosition(geometry){return {left:Math.max(8,geometry.left-32),top:Math.max(48,geometry.top-60)};}
     function stickyColumnLeft(leadingLeft){
       // Installed ConversationHeader uses a 20px left inset in both blank and active states.
       return Math.max(16,leadingLeft-20+16);
@@ -149,6 +150,10 @@ window.__ModuleLoader__.load({
 .dsh-sticky-root .st-new-sticky .st-new-sticky-label{display:none}
 .dsh-sticky-root .st-expand-mark{position:absolute;right:0;bottom:0;display:flex;color:var(--st-ink);background:var(--st-paper);border-radius:4px}
 .dsh-sticky-root .st-expand-mark svg{width:20px;height:20px}
+.dsh-sticky-root .st-collapsed{position:relative;pointer-events:auto}
+.dsh-sticky-root .st-hover-preview{display:none;position:absolute;top:100%;left:0;width:min(280px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 160px));overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding:10px 12px;background:rgb(from var(--st-paper) r g b / 1);color:var(--st-ink);border-radius:8px;box-shadow:0 2px 8px color-mix(in srgb,var(--st-ink) 20%,transparent)}
+.dsh-sticky-root .st-collapsed:hover .st-hover-preview,.dsh-sticky-root .st-collapsed:focus-within .st-hover-preview{display:block}
+.dsh-sticky-root .st-hover-preview section+section{margin-top:10px}.dsh-sticky-root .st-hover-preview strong{display:block;margin-bottom:4px}.dsh-sticky-root .st-hover-preview p{margin:3px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}.dsh-sticky-root .st-hover-preview p[data-checked=true]{text-decoration:line-through;opacity:.7}
 @media(prefers-reduced-motion:no-preference){.st-panel{animation:st-appear .15s ease-out}@keyframes st-appear{from{opacity:.5;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}}
 `;
     return {inject:['slots','locale','remote'],async apply(ctx){
@@ -710,8 +715,9 @@ function Widget({sessionId,geometry}){
     document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key);
   },[isCollapsed,state.loading,cards.length,store]);
   const toggle=()=>{setCollapsed(v=>!stickyIsCollapsed(v,geometry.narrow));setSelection(null);};
-  const preview=h('div',{className:'st-preview'},...state.notes.filter(n=>!n.archivedAt&&n.text.trim()).slice(0,3).map(n=>h('p',{key:n.id},n.text)),!count&&h('p',null,t('empty')));
-  return h(React.Fragment,null,h('div',{ref:rootRef,className:'st-position',style:{left:isCollapsed?geometry.left:geometry.left-3,top:isCollapsed?geometry.top-42:geometry.top,width:isCollapsed?82.08:layout.width}},
+  const preview=h('div',{className:'st-hover-preview'},...cards.map(card=>{const notes=state.notes.filter(n=>!n.archivedAt&&n.text.trim()&&(n.cardId||'default')===card.id);return h('section',{key:card.id},h('strong',null,card.title),...notes.map(n=>h('p',{key:n.id,'data-checked':n.checked},n.text)),!notes.length&&h('p',null,t('empty')));}),!cards.length&&h('p',null,t('empty')));
+  const collapsedPosition=stickyCollapsedPosition(geometry);
+  return h(React.Fragment,null,h('div',{ref:rootRef,className:'st-position',style:{left:isCollapsed?collapsedPosition.left:geometry.left-3,top:isCollapsed?collapsedPosition.top:geometry.top,width:isCollapsed?82.08:layout.width}},
     isCollapsed?h('div',{className:'st-collapsed'},h(Button,{className:'st-dog-button',label:t('expand')+(count?' · '+count:''),'aria-expanded':false,onClick:toggle},h('img',{src:COLLAPSED_DOG,alt:'',draggable:false}),h('span',{className:'st-expand-mark'},h(Icon,{name:'expand'})),count>0&&h('span',{className:'st-badge'},count)),preview):
       h('div',{className:'st-board',style:{height:layout.height},'aria-label':t('boardLabel')},
         h('div',{className:'st-board-tools',style:{width:layout.cardWidths[cards[0]?.id]||geometry.width}},h('div',{className:'st-board-actions'},h(Button,{className:'st-new-sticky',label:t('newSticky')+' · '+stickyShortcutLabel(),'aria-keyshortcuts':isMacSticky()?'Meta+Alt+Shift+N':'Control+Alt+Shift+N',icon:'new-sticky',disabled:creating||state.loading||cards.length>=50,onClick:newSticky}),h('div',{className:'st-palette-anchor',ref:paletteRef},h('button',{ref:paletteButtonRef,type:'button',className:'st-palette-button',title:t('palette'),'aria-label':t('palette'),'aria-expanded':paletteOpen,'aria-haspopup':'true',onClick:()=>setPaletteOpen(v=>!v)},h(Icon,{name:'palette'})),paletteOpen&&h('div',{className:'st-palette-menu',role:'group','aria-label':t('palette')},...['classic','morandi','bold'].map(value=>h(Button,{key:value,className:'st-palette-option',label:t(value==='classic'?'paletteClassic':value==='morandi'?'paletteMorandi':'paletteBold'),'aria-pressed':palette===value,onClick:()=>choosePalette(value)},h('span',{className:'st-palette-samples','data-style':value,'aria-hidden':true},...[0,1,2].map(i=>h('i',{key:i}))),h('span',null,t(value==='classic'?'paletteClassic':value==='morandi'?'paletteMorandi':'paletteBold')),palette===value&&h(Icon,{name:'check'})))))),h('img',{className:'st-board-dog',src:DOG,alt:'',draggable:false}),h(Button,{className:'st-muted st-collapse-all',label:t('collapse'),'aria-expanded':true,icon:'collapse',onClick:toggle})),
