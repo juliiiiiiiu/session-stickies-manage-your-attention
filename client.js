@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-julies-session-stickies',
+  id: 'session-stickies-manage-your-attention',
   factory(require) {
     const React = require('react');
     const {createPortal} = require('react-dom');
@@ -167,8 +167,8 @@ window.__ModuleLoader__.load({
 @media(prefers-reduced-motion:no-preference){.st-panel{animation:st-appear .15s ease-out}@keyframes st-appear{from{opacity:.5;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}}
 `;
     return {inject:['slots','locale','remote'],async apply(ctx){
-      const codec=name=>({mode:'strict',typeSymbol:name==='SessionId'?'@deepseek-ai/dsh-session/types#SessionId':'dsh-julies-session-stickies#'+name,create:()=>({parse:value=>{if(name==='SessionId'&&typeof value!=='string')throw new TypeError('SessionId must be a string');return value;}}),jsonSchema:name==='SessionId'?{type:'string'}:{}});
-      await ctx.remote.$mount({package:'dsh-julies-session-stickies',descriptors:[{id:'dsh-julies-session-stickies#stickies/request',service:'stickies',namespace:'stickies',method:'request',invocation:{kind:'direct'},scope:{context:'agent',wire:'agentId'},parameters:[{name:'agent',wire:'agentId',source:'lookup',lookup:'agent',codec:codec('SessionId')},{name:'request',wire:'request',source:'json',codec:codec('Request')}],cancellation:{parameter:'signal'},result:codec('Reply')}]});
+      const codec=name=>({mode:'strict',typeSymbol:name==='SessionId'?'@deepseek-ai/dsh-session/types#SessionId':'session-stickies-manage-your-attention#'+name,create:()=>({parse:value=>{if(name==='SessionId'&&typeof value!=='string')throw new TypeError('SessionId must be a string');return value;}}),jsonSchema:name==='SessionId'?{type:'string'}:{}});
+      await ctx.remote.$mount({package:'session-stickies-manage-your-attention',descriptors:[{id:'session-stickies-manage-your-attention#stickies/request',service:'stickies',namespace:'stickies',method:'request',invocation:{kind:'direct'},scope:{context:'agent',wire:'agentId'},parameters:[{name:'agent',wire:'agentId',source:'lookup',lookup:'agent',codec:codec('SessionId')},{name:'request',wire:'request',source:'json',codec:codec('Request')}],cancellation:{parameter:'signal'},result:codec('Reply')}]});
       // Namespace services are independent Cordis dependencies. They only exist after $mount.
       ctx.inject(['remote.stickies','remote.commands'],ctx=>{
       ctx.effect(()=>ctx.locale.register('stickies',{zh,en}));

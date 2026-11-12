@@ -260,7 +260,7 @@ test('Remote agent lookup matches the installed canonical strict wire definition
   assert.equal(parameter.lookup, 'agent');
   assert.equal(parameter.codec.mode, 'strict');
   assert.equal(matches(parameter), true);
-  assert.equal(matches({ ...parameter, codec: { ...parameter.codec, typeSymbol: 'dsh-julies-session-stickies#SessionId' } }), false);
+  assert.equal(matches({ ...parameter, codec: { ...parameter.codec, typeSymbol: 'session-stickies-manage-your-attention#SessionId' } }), false);
   assert.deepEqual(parameter.codec.jsonSchema, { type: 'string' });
   assert.equal(parameter.codec.create().parse('session-example'), 'session-example');
   assert.throws(() => parameter.codec.create().parse(123));
