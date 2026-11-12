@@ -1,4 +1,4 @@
 - insert:
-    - id: dsh-stickies
-      name: 'dsh-julies-session-stickies'
+    - id: session-stickies-manage-your-attention
+      name: 'session-stickies-manage-your-attention'
       config: {}

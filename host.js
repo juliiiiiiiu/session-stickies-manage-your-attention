@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { COLORS, STYLES, PUBLIC_ACTIONS, clone, fail, initialState, operate, validateStored } from './model.js';
 
 export const inject = ['storage', 'agents', 'commands', 'tools', 'typert'];
-const PACKAGE = 'dsh-julies-session-stickies';
+const PACKAGE = 'session-stickies-manage-your-attention';
 const jsonCodec = (name, parse = value => value) => ({ mode: 'strict', typeSymbol: `${PACKAGE}#${name}`, create: () => ({ parse }), jsonSchema: {} });
 export const remoteDescriptor = {
   id: `${PACKAGE}#stickies/request`, service: 'stickies', namespace: 'stickies', method: 'request',
