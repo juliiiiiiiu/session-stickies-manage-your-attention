@@ -37,6 +37,10 @@ This plugin targets the DeepSeek Harness desktop/web profile with protocol versi
 
 The plugin displays beside conversations. Its dog button collapses or expands the board. Enter saves the current note and keeps the input focused so you can immediately type the next task. Shift+Enter inserts a line break. The card title can be edited directly.
 
+### What's new in 1.0.8
+
+- When a turn fails and pauses a sticky's auto run, turn its switch back on and confirm to retry unchecked notes in their current order. You no longer need to cancel waiting notes first. The previous mode is kept unless you change it.
+
 ### What's new in 1.0.7
 
 - Fixed the input losing focus after Enter saves a note, so tasks can be entered continuously without another click.

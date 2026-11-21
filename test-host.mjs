@@ -408,6 +408,55 @@ for (const reason of ['aborted', 'error', 'blocked', 'max-tokens', 'interrupted'
   await finish(host, a, a.sent[0], 1, reason);
   assert.equal(a.sent.length, 1); assert.equal(host.state('a').queue.status, 'paused');
 });
+test('confirmed same-card live retry after a failed turn requeues unchecked notes without canceling waiting work', async () => {
+  const { host, agent } = fixture(), a = agent('live-retry');
+  const failed = await add(host, a, 'first'), waiting = await add(host, a, 'second');
+  const request = { action: 'queue', liveCardId: 'default', liveMode: 'answer', replacePending: false,
+    items: [failed, waiting].map(id => ({ id, mode: 'answer' })) };
+  await host.request(a, request, true);
+  // A model error can be reported before the committed turn end.
+  await host.observe(a, 'claimed', { message: a.sent[0], turn: 1 });
+  await host.observe(a, 'error', { turn: 1, error: new Error('model unavailable') });
+  assert.equal((await host.request(a, { ...request, retryPaused: true }, true)).error.code, 'BUSY');
+  await finish(host, a, a.sent[0], 1, 'error');
+  const before = await host.request(a, { action: 'list' });
+  assert.equal(before.state.queue.status, 'paused');
+  assert.deepEqual(before.state.queue.items.map(i => i.status), ['failed', 'pending']);
+  assert.equal(a.sent.length, 1);
+  assert.equal((await host.request(a, request, true)).error.code, 'BUSY_QUEUE');
+  assert.equal((await host.request(a, { ...request, retryPaused: true })).error.code, 'USER_ONLY');
+  const retry = await host.request(a, { ...request, retryPaused: true }, true);
+  assert.equal(retry.ok, true);
+  assert.deepEqual(retry.state.queue.items.map(i => [i.noteId, i.status]), [[failed, 'running'], [waiting, 'pending']]);
+  assert.equal(retry.state.notes[0].lastResult.status, 'failed');
+  assert.equal(a.sent.length, 2);
+  assert.notEqual(a.sent[0].id, a.sent[1].id);
+  assert.match(a.sent[1].content[0].text, /^\[Stickies answer;[^\n]*\n[^\n]*\n\nfirst$/);
+  await finish(host, a, a.sent[1], 2);
+  assert.equal(a.sent.length, 3);
+  assert.match(a.sent[2].content[0].text, /\n\nsecond$/);
+});
+test('scoped retry cannot replace another card or an uncertain queue', async () => {
+  const f = fixture(), a = f.agent('retry-guard'), first = await add(f.host, a), second = await add(f.host, a);
+  const request = { action: 'queue', liveCardId: 'default', liveMode: 'answer', replacePending: false,
+    items: [first, second].map(id => ({ id, mode: 'answer' })) };
+  assert.equal((await f.host.request(a, { ...request, retryPaused: true }, true)).error.code, 'QUEUE_CHANGED');
+  await f.host.request(a, request, true);
+  const restarted = fixture(f.saved), b = restarted.agent(a.id);
+  const uncertain = structuredClone(restarted.host.state(b.id));
+  assert.deepEqual(uncertain.queue.items.map(i => i.status), ['uncertain', 'pending']);
+  assert.equal((await restarted.host.request(b, { ...request, retryPaused: true }, true)).error.code, 'QUEUE_CHANGED');
+  assert.deepEqual(restarted.host.state(b.id), uncertain);
+  assert.equal(b.sent.length, 0);
+  await finish(f.host, a, a.sent[0], 1, 'error');
+  await f.host.request(a, { action: 'createCard', id: CARD_ONE });
+  const other = (await f.host.request(a, { action: 'create', cardId: CARD_ONE, text: 'other' })).state.notes.at(-1).id;
+  const paused = structuredClone(f.host.state(a.id));
+  const refused = await f.host.request(a, { ...request, retryPaused: true, liveCardId: CARD_ONE, items: [{ id: other, mode: 'answer' }] }, true);
+  assert.equal(refused.error.code, 'QUEUE_CHANGED');
+  assert.deepEqual(f.host.state(a.id), paused);
+  assert.equal(a.sent.length, 1);
+});
 test('manual pause preserves current work but prevents subsequent work', async () => {
   const { host, agent } = fixture(), a = agent('a');
   const ids = [await add(host, a, '1'), await add(host, a, '2')];

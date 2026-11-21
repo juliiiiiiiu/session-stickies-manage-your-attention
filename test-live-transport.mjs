@@ -5,9 +5,9 @@ const source=await readFile(new URL('./client-source.js',import.meta.url),'utf8'
 const start=source.indexOf('      async function transport(sessionId,request){');
 const end=source.indexOf('      function sessionStore(id){',start);
 const factory=new Function('ctx','tr',source.slice(start,end)+';return transport;');
-function fixture(){
+function fixture({retryPaused=true}={}){
  const commands=[],requests=[];
- const ctx={remote:{commands:{execute:async(_session,line)=>{const command=JSON.parse(line.slice('/stickies '.length));commands.push(command);return {ok:true,value:{result:{text:JSON.stringify({ok:true,...(command.action==='liveCapabilities'?{liveQueue:1}:{})})}}};}},stickies:{request:async(_session,request)=>{requests.push(request);return {ok:true,value:{ok:true,state:{notes:[],queue:{status:'idle',items:[]}}}};}}}};
+ const ctx={remote:{commands:{execute:async(_session,line)=>{const command=JSON.parse(line.slice('/stickies '.length));commands.push(command);return {ok:true,value:{result:{text:JSON.stringify({ok:true,...(command.action==='liveCapabilities'?{liveQueue:1,...(retryPaused?{retryPaused:true}:{})}:{})})}}};}},stickies:{request:async(_session,request)=>{requests.push(request);return {ok:true,value:{ok:true,state:{notes:[],queue:{status:'idle',items:[]}}}};}}}};
  return {transport:factory(ctx,x=>x),commands,requests};
 }
 test('user-created notes and card reorders use human command path',async()=>{
@@ -30,4 +30,13 @@ test('authorization uses human command and updates remain ordinary requests',asy
  await f.transport('s',{action:'update',id:'id',patch:{text:'edited'}});
  assert.deepEqual(f.commands[0],{action:'liveCapabilities'}); assert.equal(f.commands[1].liveCardId,'c');
  assert.deepEqual(f.requests,[{action:'list'},{action:'update',id:'id',patch:{text:'edited'}}]);
+});
+test('paused retry stays on the user command path and requires matching host support',async()=>{
+ const request={action:'queue',liveCardId:'c',liveMode:'answer',items:[],replacePending:false,retryPaused:true};
+ const current=fixture();await current.transport('s',request);
+ assert.deepEqual(current.commands,[{action:'liveCapabilities'},request]);
+ assert.deepEqual(current.requests,[{action:'list'}]);
+ const previous=fixture({retryPaused:false});
+ await assert.rejects(previous.transport('s',request),/liveNeedsRestart/);
+ assert.deepEqual(previous.commands,[{action:'liveCapabilities'}]);assert.deepEqual(previous.requests,[]);
 });

@@ -13,6 +13,8 @@ window.__ModuleLoader__.load({
     Object.assign(zh,{palette:'便签样式',paletteClassic:'经典米白',paletteMorandi:'莫兰迪',paletteBold:'大胆活泼',addNote:'添加笔记',deleteEmpty:'删除空白行',liveNeedsRestart:'请先重启 DeepSeek Harness，才能开启新版自动处理。',liveTitle:'开启自动处理？',liveConfirm:'当前和新增的笔记会自动处理，直到你关闭开关。等待中的笔记可随时调整顺序。',liveSnapshot:'按加入队列时的内容处理。',liveRisk:'Auto Act 可能修改文件。',liveEnable:'开启自动处理'});
     Object.assign(en,{palette:'Sticky style',paletteClassic:'Classic',paletteMorandi:'Morandi',paletteBold:'Bold & playful',addNote:'Add note',deleteEmpty:'Delete empty line',liveNeedsRestart:'Restart DeepSeek Harness before enabling the updated auto-run.',liveTitle:'Turn on auto run?',liveConfirm:'Current and new notes run until you turn this off. Reorder waiting notes anytime.',liveSnapshot:'Notes use the text queued.',liveRisk:'Auto Act may change files.',liveEnable:'Turn on auto run'});
     paths.palette='M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3c-.9-1-.2-2.7 1.2-2.7H18a3 3 0 0 0 3-3c0-5-4-9-9-9z M7.5 11h.01 M10 7.5h.01 M14 7.5h.01 M17 11h.01';
+    Object.assign(zh,{pendingPaused:'等待处理 · 已暂停',liveRetryHint:'已暂停。重新打开开关可重试。',liveRetryTitle:'重新开启自动处理？',liveResume:'重新开启自动处理',liveRetryConfirm:'这张便签上未完成的笔记会按当前顺序重新排队，包括失败的笔记。',liveRetryRisk:'重试可能重复上次已经执行的操作。'});
+    Object.assign(en,{pendingPaused:'Waiting · paused',liveRetryHint:'Paused. Turn the switch back on to retry.',liveRetryTitle:'Restart auto run?',liveResume:'Turn auto run back on',liveRetryConfirm:'Unchecked notes on this sticky, including failed notes, will queue again in their current order.',liveRetryRisk:'Retrying may repeat actions from the last attempt.'});
     function Icon({name}) {
       const boardPaths={
         'new-sticky':'M9.5 10.4 29.2 8.8l1.5 17.8-5.3 5.2-14.2 1.1z M25.4 31.8l-.4-5 5.7-.2 M19.8 14.3l.9 10.2m-5.6-4.7 10.2-.9',
@@ -485,7 +487,7 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onEmptyBackspace,onMov
         if(request.action==='queue'&&request.liveCardId){
           const probe=await ctx.remote.commands.execute(sessionId,'/stickies '+JSON.stringify({action:'liveCapabilities'}),[]);
           let capabilities;try{capabilities=JSON.parse(probe?.value?.result?.text||'{}');}catch{}
-          if(!probe?.ok||capabilities?.liveQueue!==1)throw new Error(tr('liveNeedsRestart'));
+          if(!probe?.ok||capabilities?.liveQueue!==1||(request.retryPaused===true&&capabilities.retryPaused!==true))throw new Error(tr('liveNeedsRestart'));
         }
         if(request.action==='create'){const {id,cardId,text,style,fontSize,color,checked,marks}=request;request={action:'liveCreate',note:{id,...(cardId?{cardId}:{}),text,style,fontSize,color,checked,...(marks?{marks}:{})}};}
         if(request.action==='reorder'&&request.cardId)request={...request,action:'liveReorder'};
@@ -532,11 +534,12 @@ function RichEditor({note,onChange,onFocus,onBlur,onEnter,onEmptyBackspace,onMov
         const hold=useRef(null),origin=useRef(null);useEffect(()=>()=>clearTimeout(hold.current),[]);
         const colors={default:'var(--dsw-alias-label-primary)',accent:'var(--dsw-alias-brand-primary)',success:'var(--dsw-alias-state-success-primary)',warn:'var(--dsw-alias-state-warn-primary)',error:'var(--dsw-alias-state-error-primary)'};
         const queue=store.get().queue;const item=[...(queue?.items||[])].reverse().find(q=>q.noteId===note.id&&!['completed','canceled'].includes(q.status));
+        const queueLabel=item?.status==='pending'&&queue?.status==='paused'?'pendingPaused':item?.status;
         const mark=note.style==='checkbox'?h('input',{type:'checkbox',checked:note.checked,'aria-label':tr(note.checked?'undone':'done'),onChange:e=>store.change(note.id,{checked:e.target.checked})}):h('span',{className:'st-mark'},note.style==='numbered'?`${index+1}.`:note.style==='bullet'?'✿':'');
         const moveKey=e=>{if(e.altKey&&['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();onMove(note.id,e.key==='ArrowUp'?-1:1);}};
         return h('div',{className:'st-row','data-style':note.style,'data-note-id':note.id,'data-checked':note.checked,'data-drag':drag===note.id,'data-drop':drop===note.id,onPointerDown:e=>{if(e.button!==0||e.target.closest('button,input,[contenteditable]'))return;origin.current={x:e.clientX,y:e.clientY};hold.current=setTimeout(()=>setDrag(note.id),450);},onPointerMove:e=>{if(origin.current&&Math.hypot(e.clientX-origin.current.x,e.clientY-origin.current.y)>8&&!drag)clearTimeout(hold.current);if(drag&&drag!==note.id)setDrop(note.id);},onPointerUp:()=>{clearTimeout(hold.current);origin.current=null;},onPointerLeave:()=>clearTimeout(hold.current)},
           h(Button,{className:'st-grip',label:tr('move'),icon:'grip',onPointerDown:e=>{e.preventDefault();setDrag(note.id);},onKeyDown:moveKey}),mark,
-          h('div',{className:'st-edit'},h(RichEditor,{note,ariaLabel:tr('title')+' '+(index+1),onFocus:()=>onFocus(note.id),onChange:patch=>store.change(note.id,patch),onBlur:()=>store.flush(note.id).catch(()=>{}),onEnter:()=>onEnter(note.id),onMoveKey:moveKey,onSelection:value=>onSelection(prev=>value||(document.activeElement?.closest?.('.st-selection-tools')?prev:prev?.noteId===note.id?null:prev))}),item&&h('div',{className:'st-status','data-status':item.status},h(Icon,{name:item.mode==='answer'?'reply':'bolt'}),tr(item.status),item.error&&h('span',{title:item.error},'!'),item.status==='pending'&&h(Button,{label:tr('clearQueue'),icon:'close',onClick:()=>store.run({action:'cancelItem',id:item.id})})),
+          h('div',{className:'st-edit'},h(RichEditor,{note,ariaLabel:tr('title')+' '+(index+1),onFocus:()=>onFocus(note.id),onChange:patch=>store.change(note.id,patch),onBlur:()=>store.flush(note.id).catch(()=>{}),onEnter:()=>onEnter(note.id),onMoveKey:moveKey,onSelection:value=>onSelection(prev=>value||(document.activeElement?.closest?.('.st-selection-tools')?prev:prev?.noteId===note.id?null:prev))}),item&&h('div',{className:'st-status','data-status':queueLabel==='pendingPaused'?'paused':item.status},h(Icon,{name:item.mode==='answer'?'reply':'bolt'}),tr(queueLabel),item.error&&h('span',{title:item.error},'!'),item.status==='pending'&&h(Button,{label:tr('clearQueue'),icon:'close',onClick:()=>store.run({action:'cancelItem',id:item.id})})),
           h(Button,{className:'st-row-delete',label:tr('delete'),icon:'trash',onClick:async()=>{await store.flush(note.id);await store.run({action:'delete',id:note.id});}})));
       }
       // Embedded in the mounted Stickies Client context; only plugin-owned DOM is measured.
@@ -591,12 +594,27 @@ function StickySelectionTools({selection,toolsRef}){
     h(Button,{label:t('bold'),icon:'bold','aria-pressed':!!selection.bold,onMouseDown:e=>e.preventDefault(),onClick:()=>selection.apply({bold:!selection.bold})}));
 }
 
+// AUTO QUEUE POLICY START
+function stickyAutoState(queue,cardId,cardNoteIds){
+  const items=queue?.items||[], authorized=['armed','running'].includes(queue?.status);
+  const inFlight=i=>['running','dispatching'].includes(i.status);
+  const hasInFlight=items.some(inFlight), pending=items.some(i=>i.status==='pending');
+  const ownsLive=queue?.liveCardId===cardId;
+  const retryPaused=ownsLive&&queue?.status==='paused'&&!hasInFlight&&
+    items.some(i=>['pending','failed'].includes(i.status))&&!items.some(i=>i.status==='uncertain');
+  const switchOn=(ownsLive&&authorized)||(queue?.status!=='paused'&&items.some(i=>cardNoteIds.has(i.noteId)&&(inFlight(i)||i.status==='pending')));
+  const queueBlocked=authorized||hasInFlight||(pending&&!retryPaused);
+  return {switchOn,queueBlocked,retryPaused,priorMode:ownsLive&&queue.liveMode==='answer'?'answer':'execute'};
+}
+// AUTO QUEUE POLICY END
+
 function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSize,maxWidth,maxHeight,onSize,onSelection,selection,toolsRef,onRenameFocus,onFocusConsumed}){
   const t=useLanguage(),rootRef=useRef(null),draftRef=useRef(null),runButtonRef=useRef(null),runPopoverRef=useRef(null),resize=useRef(null);
   const settingsKey='dsh-stickies-draft-settings:'+sessionId+':'+card.id;
   const [formatOpen,setFormatOpen]=useState(false),[focused,setFocused]=useState(null),[settings,setSettings]=useState(()=>{const v=stickyReadLocal(settingsKey,{}),migrationKey=settingsKey+':bullet-default-v1';const migrated=stickyReadLocal(migrationKey,false);if(!migrated){if(v.style==='checkbox')v.style='bullet';stickyWriteLocal(migrationKey,true);}return {style:['text','checkbox','bullet','numbered'].includes(v?.style)?v.style:'bullet',fontSize:Number.isInteger(v?.fontSize)&&v.fontSize>=10&&v.fontSize<=32?v.fontSize:12,color:['default','accent','success','warn','error'].includes(v?.color)?v.color:'default'};});
   useEffect(()=>stickyWriteLocal(settingsKey,settings),[settingsKey,settings]);
-  const [runOpen,setRunOpen]=useState(false),[runAnchor,setRunAnchor]=useState(null),[runMode,setRunMode]=useState('execute'),[busy,setBusy]=useState(false),[confirmAuto,setConfirmAuto]=useState(false);
+  const [runOpen,setRunOpen]=useState(false),[runAnchor,setRunAnchor]=useState(null),[selectedMode,setRunMode]=useState(null),[busy,setBusy]=useState(false),[confirmAuto,setConfirmAuto]=useState(null);
+  const retryHintId=React.useId();
   const [drag,setDrag]=useState(null),[drop,setDrop]=useState(null),[footerPinned,setFooterPinned]=useState(false),[deleting,setDeleting]=useState(false);
   useLayoutEffect(()=>{
     const node=rootRef.current,scroll=node?.parentElement;if(!scroll?.classList.contains('st-board-scroll'))return;
@@ -675,17 +693,16 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
     onSize(card.id,{width:next.width,...(edge.includes('s')?{height:next.height}:Number.isFinite(savedSize?.height)?{height:savedSize.height}:{})});setRunOpen(false);onSelection(null);
   }}));
   const cardNoteIds=new Set(state.notes.filter(n=>(n.cardId||'default')===card.id).map(n=>n.id));
-  const queueItems=state.queue?.items?.filter(i=>cardNoteIds.has(i.noteId))||[];
-  const queueActive=queueItems.some(i=>['pending','running','dispatching'].includes(i.status));
-  const queueBlocked=['armed','running'].includes(state.queue?.status)||state.queue?.items?.some(i=>['pending','running','dispatching'].includes(i.status));
-  const switchOn=(state.queue?.liveCardId===card.id&&['armed','running'].includes(state.queue?.status))||(queueActive&&state.queue?.status!=='paused');
+  const {switchOn,queueBlocked,retryPaused,priorMode}=stickyAutoState(state.queue,card.id,cardNoteIds);
+  const runMode=selectedMode??priorMode;
+  const cannotEnable=state.loading||queueBlocked||active.filter(n=>!n.checked&&n.text.trim()).length>100;
+  const enableKind=retryPaused?'retry':'enable';
   const toggleAuto=async(confirmed=false)=>{
-    if(busy)return;
+    if(busy||(!switchOn&&cannotEnable)||(confirmed&&(switchOn||confirmAuto!==enableKind)))return;
     // A toggle is not a request for a fresh empty note. Preserve any unsaved text.
     if(!draftValue.current)setDraftVisible(false);
-    if(confirmed&&switchOn)return;
-    if(!switchOn&&!confirmed&&stickyReadLocal('dsh-stickies-auto-confirmed-v1',false)!==true){setConfirmAuto(true);return;}
-    setConfirmAuto(false);setBusy(true);setRunOpen(false);
+    if(!switchOn&&!confirmed&&(retryPaused||stickyReadLocal('dsh-stickies-auto-confirmed-v1',false)!==true)){setConfirmAuto(enableKind);return;}
+    setConfirmAuto(null);setBusy(true);setRunOpen(false);
     try{
       if(switchOn){
         await store.run({action:'pause'});
@@ -694,7 +711,7 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
         await commitDraft();if(!draftValue.current)setDraftVisible(false);await store.flushAll();
         const notes=store.get().notes.filter(n=>(n.cardId||'default')===card.id&&!n.archivedAt&&!n.checked&&n.text.trim());
         if(notes.length>100)return;
-        await store.run({action:'queue',replacePending:false,liveCardId:card.id,liveMode:runMode,items:notes.map(n=>({id:n.id,mode:runMode}))});
+        await store.run({action:'queue',replacePending:false,...(retryPaused?{retryPaused:true}:{}),liveCardId:card.id,liveMode:runMode,items:notes.map(n=>({id:n.id,mode:runMode}))});
         if(confirmed)stickyWriteLocal('dsh-stickies-auto-confirmed-v1',true);
       }
     }finally{setBusy(false);}
@@ -706,13 +723,15 @@ function StickyCard({sessionId,card,cardIndex,palette,store,state,width,savedSiz
       h('div',{className:'st-scroll st-card-body'},...active.map((note,index)=>h(NoteRow,{key:note.id,note,index,store,onFocus:setFocused,onEnter:id=>focusNext(id).catch(()=>{}),onMove:(id,delta)=>move(id,delta).catch(()=>{}),onSelection,drag,setDrag,drop,setDrop})),
         draftVisible?h('div',{key:'draft',className:'st-row st-draft-row','data-style':settings.style},settings.style==='checkbox'?h('span',{className:'st-mark st-draft-check','aria-hidden':true}):h('span',{className:'st-mark','aria-hidden':true},settings.style==='bullet'?'✿':settings.style==='numbered'?`${active.length+1}.`:''),h(RichEditor,{editorRef:draftRef,note:{id:draftId,text:draft,marks,...settings},placeholder:count?'':t('empty'),ariaLabel:card.title+' '+t('empty'),onFocus:()=>setFocused(null),onChange:saveDraft,onBlur:e=>{if(e.relatedTarget?.closest?.('.st-selection-tools'))return;commitDraft().catch(()=>{});},onEnter:()=>commitDraft().catch(()=>{}),onEmptyBackspace:removeEmptyDraft,onSelection:value=>onSelection(prev=>value||(toolsRef.current?.contains(document.activeElement)?prev:prev?.noteId===draftId?null:prev))}),!draft&&h(Button,{className:'st-row-delete',label:t('deleteEmpty'),icon:'trash',onMouseDown:e=>e.preventDefault(),onClick:removeEmptyDraft})):h(Button,{className:'st-add-note',label:t('addNote'),icon:'plus',onClick:showDraft},t('addNote'))),
       h('footer',{className:'st-footer st-footer-minimal'},
-        h('div',{className:'st-footer-controls'},h('div',{className:'st-auto-controls'},h(Button,{className:'st-auto-switch',role:'switch','aria-checked':switchOn,label:switchOn?'Turn off and cancel pending follow-ups; running work continues':'Authorize current and newly committed notes on this sticky until switched off; follows the visible order',disabled:busy||(!switchOn&&(state.loading||queueBlocked||active.filter(n=>!n.checked&&n.text.trim()).length>100)),onClick:()=>toggleAuto()},h('span',{'aria-hidden':true})),
+        retryPaused&&h('span',{id:retryHintId,className:'st-queue-status'},t('liveRetryHint')),
+        h('div',{className:'st-footer-controls'},h('div',{className:'st-auto-controls'},h(Button,{className:'st-auto-switch',role:'switch','aria-checked':switchOn,'aria-describedby':retryPaused?retryHintId:undefined,label:retryPaused?t('liveResume'):switchOn?'Turn off and cancel pending follow-ups; running work continues':'Authorize current and newly committed notes on this sticky until switched off; follows the visible order',disabled:busy||(!switchOn&&cannotEnable),onClick:()=>toggleAuto()},h('span',{'aria-hidden':true})),
           h('div',{ref:runButtonRef,className:'st-mode-anchor'},h(Button,{className:'st-auto-run',label:runMode==='execute'?'Auto Act':'Answer only','aria-haspopup':'menu','aria-expanded':runOpen,disabled:busy||switchOn,onClick:()=>{const r=runButtonRef.current?.getBoundingClientRect();if(r)setRunAnchor({left:Math.max(8,Math.min(r.left,window.innerWidth-160)),bottom:window.innerHeight-r.top+4});setRunOpen(v=>!v);}},runMode==='execute'?'Auto Act':'Answer only',h(Icon,{name:'down'})))),
         h(Button,{className:'st-format-toggle',label:t('format'),icon:'type','aria-expanded':formatOpen,onClick:()=>setFormatOpen(v=>!v)}))),...handles),runPopover,
-    confirmAuto&&h(Dialog,{title:t('liveTitle'),className:'st-auto-dialog',onClose:()=>setConfirmAuto(false)},
+    confirmAuto&&h(Dialog,{title:t(confirmAuto==='retry'?'liveRetryTitle':'liveTitle'),className:'st-auto-dialog',onClose:()=>setConfirmAuto(null)},
+      confirmAuto==='retry'&&h('p',null,t('liveRetryConfirm'),' ',t(runMode==='execute'?'liveRetryRisk':'answerHint')),
       h('p',null,t('liveConfirm')),
-      h('p',null,t('liveSnapshot'),' ',t('liveRisk')),
-      h('div',{className:'st-auto-dialog-actions'},h(Button,{label:t('cancel'),autoFocus:true,onClick:()=>setConfirmAuto(false)},t('cancel')),h(Button,{className:'st-confirm-auto',label:t('liveEnable'),disabled:busy||queueBlocked,onClick:()=>toggleAuto(true)},t('liveEnable')))));
+      confirmAuto!=='retry'&&h('p',null,t('liveSnapshot'),' ',t('liveRisk')),
+      h('div',{className:'st-auto-dialog-actions'},h(Button,{label:t('cancel'),autoFocus:true,onClick:()=>setConfirmAuto(null)},t('cancel')),h(Button,{className:'st-confirm-auto',label:t(confirmAuto==='retry'?'liveResume':'liveEnable'),disabled:busy||switchOn||cannotEnable||confirmAuto!==enableKind,onClick:()=>toggleAuto(true)},t(confirmAuto==='retry'?'liveResume':'liveEnable')))));
 }
 
 function Widget({sessionId,geometry}){

@@ -154,7 +154,13 @@ export function operate(state, request, { user = false, now = Date.now(), uuid =
   } else if (action === 'queue') {
     if (['armed', 'running'].includes(next.queue.status)) fail('BUSY_QUEUE', 'Pause the current queue before authorizing a replacement. Replacement discards remaining pending items.');
     if (next.queue.items.some(i => i.status === 'running' || i.status === 'dispatching')) fail('BUSY', 'The previous queue still has an in-flight item.');
-    if (request.replacePending === false && next.queue.items.some(i => i.status === 'pending')) fail('BUSY_QUEUE', 'Pending items remain in this session. Cancel them explicitly before starting another queue.');
+    // A confirmed retry may replace only its own paused live queue. Check again
+    // on the host, since another tab can change the queue after the switch renders.
+    const retriesPaused = request.retryPaused === true;
+    if (retriesPaused && (typeof request.liveCardId !== 'string' || next.queue.liveCardId !== request.liveCardId || next.queue.status !== 'paused' || !next.queue.items.some(i => ['pending', 'failed'].includes(i.status)) || next.queue.items.some(i => i.status === 'uncertain'))) {
+      fail('QUEUE_CHANGED', 'This paused queue is no longer available to retry. Review the current queue before trying again.');
+    }
+    if (!retriesPaused && request.replacePending === false && next.queue.items.some(i => i.status === 'pending')) fail('BUSY_QUEUE', 'Pending items remain in this session. Cancel them explicitly before starting another queue.');
     const items = request.items ?? request.ids?.map(id => ({ id, mode: request.mode }));
     const live = request.liveCardId !== undefined || request.liveMode !== undefined;
     if (live) {

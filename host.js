@@ -246,7 +246,7 @@ export async function apply(ctx, config = {}, protocol) {
       let result;
       try {
         const request = JSON.parse(rawInput);
-        if (request.action === 'liveCapabilities') return { kind: 'success', text: JSON.stringify({ ok: true, liveQueue: 1 }) };
+        if (request.action === 'liveCapabilities') return { kind: 'success', text: JSON.stringify({ ok: true, liveQueue: 1, retryPaused: true }) };
         if (!['queue', 'liveCreate', 'liveReorder'].includes(request.action)) fail('COMMAND_ACTION', 'This command accepts queue, liveCreate, or liveReorder only.');
         result = await host.request(agent, request, true, signal);
       }
