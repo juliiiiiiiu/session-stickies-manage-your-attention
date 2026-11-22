@@ -8,5 +8,7 @@ const rich=await readFile(new URL('./rich-editor.js',import.meta.url),'utf8');
 if(!source.includes('__RICH_EDITOR_SOURCE__'))throw new Error('Missing rich editor insertion marker');
 const board=await readFile(new URL('./board-ui.js',import.meta.url),'utf8');
 if(!source.includes('__STICKY_BOARD_SOURCE__'))throw new Error('Missing sticky board insertion marker');
-await writeFile(new URL('./client.js',import.meta.url),source.replace('__WESTIE_DATA_URI__','data:image/png;base64,'+image.toString('base64')).replace('__WESTIE_COLLAPSED_DATA_URI__','data:image/png;base64,'+collapsedImage.toString('base64')).replace('__RICH_EDITOR_SOURCE__',()=>rich).replace('__STICKY_BOARD_SOURCE__',()=>board));
+const starImage=await readFile(new URL('./westie-star.webp',import.meta.url));
+if(!source.includes('__WESTIE_STAR_DATA_URI__'))throw new Error('Missing star image insertion marker');
+await writeFile(new URL('./client.js',import.meta.url),source.replace('__WESTIE_DATA_URI__','data:image/png;base64,'+image.toString('base64')).replace('__WESTIE_COLLAPSED_DATA_URI__','data:image/png;base64,'+collapsedImage.toString('base64')).replace('__WESTIE_STAR_DATA_URI__','data:image/webp;base64,'+starImage.toString('base64')).replace('__RICH_EDITOR_SOURCE__',()=>rich).replace('__STICKY_BOARD_SOURCE__',()=>board));
 console.log('Built client.js with approved Westie asset');

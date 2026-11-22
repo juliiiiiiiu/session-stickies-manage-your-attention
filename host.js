@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { COLORS, STYLES, PUBLIC_ACTIONS, clone, fail, initialState, operate, validateStored } from './model.js';
+import { StarInvite } from './star-invite.js';
 
 export const inject = ['storage', 'agents', 'commands', 'tools', 'typert'];
 const PACKAGE = 'session-stickies-manage-your-attention';
@@ -22,7 +23,7 @@ export const remoteDescriptor = {
 export function registerRemote(ctx, host, TypertRemoteService) {
   class StickiesRemote extends TypertRemoteService {
     constructor(context) { super(context, 'stickies'); }
-    request(agent, request, signal) { return host.request(agent, request, false, signal); }
+    request(agent, request, signal) { return host.request(agent, request, false, signal, 'remote'); }
   }
   new StickiesRemote(ctx);
   ctx.typert.register({ package: PACKAGE, face: 'host', schemas: [], model: { services: [], events: [], objects: [] }, invocations: [remoteDescriptor] });
@@ -33,8 +34,9 @@ const ANSWER_READ_TOOLS = new Set(['read', 'read_image', 'glob', 'grep', 'web_se
 
 /** One serialized owner per session. No filesystem/profile writes and no composer access. */
 export class StickiesHost {
-  constructor(unit, agents, records = {}) {
-    this.unit = unit; this.agents = agents; this.states = new Map(); this.chains = new Map(); this.faults = new Map(); this.answerTurns = new Map(); this.closed = false;
+  constructor(unit, agents, records = {}, starInvite) {
+    this.unit = unit; this.agents = agents; this.starInvite = starInvite;
+    this.states = new Map(); this.chains = new Map(); this.faults = new Map(); this.answerTurns = new Map(); this.closed = false;
     for (const [id, value] of Object.entries(records)) {
       const state = validateStored(value);
       // Never replay uncertain execution or transfer an old authorization across reload.
@@ -57,8 +59,12 @@ export class StickiesHost {
     try { await this.unit.putRecord('sessions', id, state); this.states.set(id, state); }
     catch (error) { this.faults.set(id, errorValue(error)); throw error; }
   }
-  async request(agent, request, user = false, signal) {
+  async request(agent, request, user = false, signal, source) {
     if (!agent?.id) return { ok: false, error: { code: 'NO_SESSION', message: 'An exact session is required.' } };
+    if (source === 'remote' && request?.action === 'claimStarInvite') {
+      const show = !this.closed && (await this.starInvite?.claim(signal) ?? false);
+      return { ok: true, show };
+    }
     return this.serial(agent.id, async () => {
       try {
         signal?.throwIfAborted();
@@ -74,8 +80,14 @@ export class StickiesHost {
           recovered.revision++;
           await this.save(agent.id, recovered); this.faults.delete(agent.id);
         }
-        const next = operate(this.state(agent.id), request, { user });
+        const previous = this.state(agent.id);
+        const next = operate(previous, request, { user });
         if (request.action !== 'list') await this.save(agent.id, next);
+        const countsForInvite = (source === 'remote' && request.action === 'create') || (source === 'command' && request.action === 'liveCreate');
+        if (countsForInvite && next.notes.length > previous.notes.length) {
+          // The note is durable now. Do not make note or queue handling wait for invite I/O.
+          void this.starInvite?.recordNoteSave();
+        }
         if (request.action === 'queue' || request.action === 'liveCreate') {
           if (signal?.aborted) {
             const paused = clone(this.state(agent.id)); paused.queue.status = 'paused'; paused.queue.error = 'Authorization request was canceled.'; paused.revision++;
@@ -198,7 +210,7 @@ export class StickiesHost {
       for (const item of state.queue.items) if (item.messageId && ['running', 'dispatching'].includes(item.status)) agent?.inbox.remove(item.messageId);
     }
     await Promise.allSettled([...this.chains.values()]);
-    await this.unit.close();
+    await Promise.all([this.unit.close(), this.starInvite?.close()]);
   }
 }
 
@@ -237,7 +249,7 @@ export async function apply(ctx, config = {}, protocol) {
   if (!backend.kv) throw new Error(`Storage backend ${backendName} has no KV facility.`);
   const unit = await backend.kv.open({ name: 'dsh_stickies', version: 1, tables: ['sessions'], hasGlobal: false, layout: 'per-record' });
   let host;
-  try { const data = await unit.loadAll(); host = new StickiesHost(unit, ctx.agents, data.tables.sessions || {}); }
+  try { const data = await unit.loadAll(); host = new StickiesHost(unit, ctx.agents, data.tables.sessions || {}, new StarInvite(backend.kv)); }
   catch (error) { await unit.close(); throw error; }
   ctx.effect(() => () => host.close());
   registerRemote(ctx, host, TypertRemoteService);
@@ -248,7 +260,7 @@ export async function apply(ctx, config = {}, protocol) {
         const request = JSON.parse(rawInput);
         if (request.action === 'liveCapabilities') return { kind: 'success', text: JSON.stringify({ ok: true, liveQueue: 1, retryPaused: true }) };
         if (!['queue', 'liveCreate', 'liveReorder'].includes(request.action)) fail('COMMAND_ACTION', 'This command accepts queue, liveCreate, or liveReorder only.');
-        result = await host.request(agent, request, true, signal);
+        result = await host.request(agent, request, true, signal, 'command');
       }
       catch (error) { result = { ok: false, error: errorValue(error) }; }
       // Command lifecycle is durable; never copy the private notes snapshot into its result.

@@ -492,13 +492,11 @@ test('discarded followup and dispatch errors pause visibly', async () => {
   assert.equal(f.host.state('a').queue.items[0].status, 'uncertain');
 });
 test('installable apply registers only user command authorization and scoped-session tools', async () => {
-  const f = fixture(), commands = [], tools = [], events = new Map(), cleanup = [];
+  const f = fixture(), commands = [], tools = [], events = new Map(), cleanup = [], opened = [];
   const ctx = { storage: { backend: { names: () => ['test'], get: () => ({ kv: { open: async descriptor => {
-      // dsh-storage/lib/index.js UNIT_NAME_RE: unit AND table names are SQL-safe identifiers.
-      assert.match(descriptor.name, /^[a-z][a-z0-9_]*$/);
-      for (const table of descriptor.tables) assert.match(table, /^[a-z][a-z0-9_]*$/);
-      assert.equal(descriptor.name, 'dsh_stickies');
-      return { ...f.unit, loadAll: async () => ({ tables: { sessions: {} } }) };
+      opened.push(descriptor);
+      if (descriptor.name === 'dsh_stickies') return { ...f.unit, loadAll: async () => ({ tables: { sessions: {} } }) };
+      return { loadAll: async () => ({ tables: {}, global: null }), async setGlobal() {}, async close() {} };
     } } }) } }, agents: f.host.agents,
     effect(fn) { cleanup.push(fn()); }, typert: { register(d) { assert.equal(d.invocations[0].parameters[0].lookup, 'agent'); } }, commands: { register(d) { commands.push(d); } }, tools: { register(d) { tools.push(d); }, guard(fn) { ctx.guard = fn; } }, on(k, fn) { events.set(k, fn); } };
   class RemoteService { constructor(ctx, key) { ctx[key] = this; } }
@@ -517,6 +515,9 @@ test('installable apply registers only user command authorization and scoped-ses
   assert.equal((await ctx.stickies.request(a, { action: 'liveCreate', note: { text: 'denied' } })).error.code, 'USER_ONLY');
   assert.equal((await commands[0].handler({ agent: a, rawInput: JSON.stringify({ action: 'create', text: 'no' }) })).kind, 'error');
   await Promise.all(cleanup.map(fn => fn()));
+  assert.deepEqual(opened.map(d => d.name), ['dsh_stickies', 'dsh_stickies_star_invite']);
+  // DSH UNIT_NAME_RE applies to both unit and table names.
+  for (const descriptor of opened) for (const name of [descriptor.name, ...descriptor.tables]) assert.match(name, /^[a-z][a-z0-9_]*$/);
 });
 
 test('notes added and reordered during an open turn dispatch in the latest pending order', async () => {

@@ -4,6 +4,8 @@
 
 A plugin that keeps ideas, questions, and follow-ups next to the session they belong to—so you can switch tasks without losing your train of thought.
 
+[☆ Star on GitHub · 去 GitHub 加星](https://github.com/juliiiiiiiu/session-stickies-manage-your-attention)
+
 ![Session Stickies in a DeepSeek Harness session](session-stickies-cover.png)
 
 ## The problem
@@ -36,6 +38,11 @@ Currently available for **DeepSeek Harness (DSH)**. Support for other agent harn
 This plugin targets the DeepSeek Harness desktop/web profile with protocol version `0.2.2-rc.1`. Install the GitHub bundle from Plugin Manager using `github:juliiiiiiiu/session-stickies-manage-your-attention`, or the public npm package `session-stickies-manage-your-attention`. A page refresh may be needed after activation. GitHub installs can require build permission according to your package manager's policy; inspect the source before allowing it.
 
 The plugin displays beside conversations. Its dog button collapses or expands the board. Enter saves the current note and keeps the input focused so you can immediately type the next task. Shift+Enter inserts a line break. The card title can be edited directly.
+
+### What's new in 1.0.9
+
+- After you save new notes on two separate days, Stickies can show a one-time invitation the next time you expand the board and there is space. The invitation never opens GitHub automatically. Its button opens the repository, where you can star it yourself.
+- The **Star on GitHub** link above remains available in the plugin details, even after the invitation is dismissed. The invitation stores only the two local dates and whether it has been shown; it does not send note content or use GitHub credentials.
 
 ### What's new in 1.0.8
 
