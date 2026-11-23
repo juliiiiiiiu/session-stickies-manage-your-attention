@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { COLORS, STYLES, PUBLIC_ACTIONS, clone, fail, initialState, operate, validateStored } from './model.js';
 import { StarInvite } from './star-invite.js';
+import { starRepositoryWithGh } from './gh-star-cli.js';
 
 export const inject = ['storage', 'agents', 'commands', 'tools', 'typert'];
 const PACKAGE = 'session-stickies-manage-your-attention';
@@ -23,7 +24,12 @@ export const remoteDescriptor = {
 export function registerRemote(ctx, host, TypertRemoteService) {
   class StickiesRemote extends TypertRemoteService {
     constructor(context) { super(context, 'stickies'); }
-    request(agent, request, signal) { return host.request(agent, request, false, signal, 'remote'); }
+    request(agent, request, signal) {
+      const owner = this.ctx?.invocation?.peer?.principal?.kind === 'owner';
+      if (!owner && request?.action === 'starRepository') return { ok: true, status: 'noAuthorization' };
+      if (!owner && request?.action === 'claimStarInvite') return { ok: true, show: false };
+      return host.request(agent, request, false, signal, 'remote');
+    }
   }
   new StickiesRemote(ctx);
   ctx.typert.register({ package: PACKAGE, face: 'host', schemas: [], model: { services: [], events: [], objects: [] }, invocations: [remoteDescriptor] });
@@ -34,8 +40,8 @@ const ANSWER_READ_TOOLS = new Set(['read', 'read_image', 'glob', 'grep', 'web_se
 
 /** One serialized owner per session. No filesystem/profile writes and no composer access. */
 export class StickiesHost {
-  constructor(unit, agents, records = {}, starInvite) {
-    this.unit = unit; this.agents = agents; this.starInvite = starInvite;
+  constructor(unit, agents, records = {}, starInvite, performStar) {
+    this.unit = unit; this.agents = agents; this.starInvite = starInvite; this.performStar = performStar;
     this.states = new Map(); this.chains = new Map(); this.faults = new Map(); this.answerTurns = new Map(); this.closed = false;
     for (const [id, value] of Object.entries(records)) {
       const state = validateStored(value);
@@ -61,6 +67,11 @@ export class StickiesHost {
   }
   async request(agent, request, user = false, signal, source) {
     if (!agent?.id) return { ok: false, error: { code: 'NO_SESSION', message: 'An exact session is required.' } };
+    if (request?.action === 'starRepository') {
+      if (source !== 'remote') return { ok: false, error: { code: 'INVALID_ACTION', message: 'Unknown operation.' } };
+      if (this.closed || !this.performStar) return { ok: true, status: 'retry' };
+      return this.performStar(signal);
+    }
     if (source === 'remote' && request?.action === 'claimStarInvite') {
       const show = !this.closed && (await this.starInvite?.claim(signal) ?? false);
       return { ok: true, show };
@@ -249,7 +260,10 @@ export async function apply(ctx, config = {}, protocol) {
   if (!backend.kv) throw new Error(`Storage backend ${backendName} has no KV facility.`);
   const unit = await backend.kv.open({ name: 'dsh_stickies', version: 1, tables: ['sessions'], hasGlobal: false, layout: 'per-record' });
   let host;
-  try { const data = await unit.loadAll(); host = new StickiesHost(unit, ctx.agents, data.tables.sessions || {}, new StarInvite(backend.kv)); }
+  try {
+    const data = await unit.loadAll();
+    host = new StickiesHost(unit, ctx.agents, data.tables.sessions || {}, new StarInvite(backend.kv), starRepositoryWithGh);
+  }
   catch (error) { await unit.close(); throw error; }
   ctx.effect(() => () => host.close());
   registerRemote(ctx, host, TypertRemoteService);

@@ -4,8 +4,6 @@
 
 A plugin that keeps ideas, questions, and follow-ups next to the session they belong to—so you can switch tasks without losing your train of thought.
 
-[☆ Star on GitHub · 去 GitHub 加星](https://github.com/juliiiiiiiu/session-stickies-manage-your-attention)
-
 ![Session Stickies in a DeepSeek Harness session](session-stickies-cover.png)
 
 ## The problem
@@ -39,10 +37,11 @@ This plugin targets the DeepSeek Harness desktop/web profile with protocol versi
 
 The plugin displays beside conversations. Its dog button collapses or expands the board. Enter saves the current note and keeps the input focused so you can immediately type the next task. Shift+Enter inserts a line break. The card title can be edited directly.
 
-### What's new in 1.0.9
+### What's new in 1.0.10
 
-- After you save new notes on two separate days, Stickies can show a one-time invitation the next time you expand the board and there is space. The invitation never opens GitHub automatically. Its button opens the repository, where you can star it yourself.
-- The **Star on GitHub** link above remains available in the plugin details, even after the invitation is dismissed. The invitation stores only the two local dates and whether it has been shown; it does not send note content or use GitHub credentials.
+After you save new notes on two separate days, Stickies can show a one-time invitation the next time you expand the board and there is space. The invitation stores only the two local dates and whether it has been shown. It never sends note content to GitHub.
+
+The invitation sits below the first sticky. **Give a star** uses the GitHub CLI (`gh`) already signed in on the DSH host. Only the authenticated host owner can initiate this operation, and the plugin never reads the token itself. If GitHub confirms the star, the invitation shows **Starred**. If `gh` is unavailable, signed out, or lacks permission, the button changes to **Star on GitHub**. Clicking again opens the repository. A temporary connection failure offers **Retry** instead. No request is made until the button is clicked.
 
 ### What's new in 1.0.8
 

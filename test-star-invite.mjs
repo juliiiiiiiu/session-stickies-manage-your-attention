@@ -56,12 +56,13 @@ async function start(p, port = 62307) {
   const sessions = new Map(), tools = [], commands = [], cleanup = [];
   const ctx = {
     gui: { url: `http://127.0.0.1:${port}` },
+    invocation: { peer: { principal: { kind: 'owner' } } },
     storage: { backend: { names: () => ['test'], get: () => ({ kv: p.kv }) } },
     agents: { get: id => sessions.get(id), list: () => [...sessions.values()], turnBoundaryOf: () => ({ openTurnStartSeq: null }) },
     tools: { register: d => tools.push(d), guard() {} }, commands: { register: d => commands.push(d) },
     typert: { register() {} }, effect: fn => cleanup.push(fn()), on() {}
   };
-  class Remote { constructor(ctx, service) { ctx[service] = this; } }
+  class Remote { constructor(ctx, service) { this.ctx = ctx; ctx[service] = this; } }
   await apply(ctx, {}, { TypertRemoteService: Remote });
   const agent = id => {
     if (!sessions.has(id)) sessions.set(id, { id, session: { id }, inbox: { remove() {} } });
